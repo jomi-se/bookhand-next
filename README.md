@@ -9,10 +9,10 @@ in SQLite compiled to WebAssembly, persisted in the browser's own storage.
 
 ## What it does
 
-Bookhand is a real reader first. Open the bundled book or import your own EPUB,
-navigate a nested table of contents, select exact text, adjust typography and
-book CSS, and come back later to exactly where you were. All of that works with
-no agent present.
+Bookhand is a real reader first. Open one of the bundled books or import your
+own EPUB, navigate a nested table of contents, select exact text, adjust
+typography and book CSS, and come back later to exactly where you were. All of
+that works with no agent present.
 
 WebMCP then gives an agent precise semantics for the same capabilities, instead
 of leaving it to guess its way around the interface. Because a book is a
@@ -112,14 +112,23 @@ Architecture decisions are in [`docs/decisions/`](docs/decisions/), the product
 thesis in [`docs/product-north-star.md`](docs/product-north-star.md), and
 current state in [`docs/plan/current-work.md`](docs/plan/current-work.md).
 
-## The bundled book
+## Bundled judging books
 
-*Calculus Made Easy* by Silvanus P. Thompson is Project Gutenberg eBook #33283,
-included unmodified and checksum-pinned as a demonstration book. It is a
-placeholder, not part of the product: emptying the registration list in
-[`src/library/bundled-books.ts`](src/library/bundled-books.ts) leaves the
+Bookhand temporarily includes three unmodified, checksum-pinned Project
+Gutenberg EPUBs:
+
+- *Calculus Made Easy* by Silvanus P. Thompson — the primary reading, tutoring,
+  and mathematics-remaster demonstration.
+- *Relativity: The Special & the General Theory* by Albert Einstein — a corpus
+  whose hundreds of image-based formula glyphs make semantic restoration
+  especially visible.
+- *Flatland* by Edwin A. Abbott — a contrasting example of structural,
+  responsive, and figure restoration in legacy book markup.
+
+They are judging fixtures, not part of the product. Emptying the registration
+list in [`src/library/bundled-books.ts`](src/library/bundled-books.ts) leaves the
 ordinary empty library. See [`public/books/README.md`](public/books/README.md)
-for provenance and terms.
+for exact artifacts, provenance, checksums, and terms.
 
 ## License
 
