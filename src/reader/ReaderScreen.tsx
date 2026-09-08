@@ -6,6 +6,7 @@ import {
   LayoutPanelLeft,
   List,
   Minus,
+  MessageCircle,
   Plus,
   RotateCw,
   Search,
@@ -36,6 +37,11 @@ import { useBookIndex } from './useBookIndex.ts'
 import { GuidanceIndicator } from './GuidanceIndicator.tsx'
 import { prepareReaderOptionsForBrowser } from '../runtime/test-control-bridge.ts'
 import { paintedReaderTheme, shellPalette } from './theme.ts'
+import { TutorPanel } from '../tutor/TutorPanel.tsx'
+import type { TutorAttachment } from '../tutor/conversation.ts'
+import type { ToolDefinition } from '../webmcp/model-context.ts'
+import type { AiConnectionStore } from '../ai/connection.ts'
+import type { AiFeatureIntent } from '../ai/pending-intent.ts'
 
 export type { ReaderPanel }
 
@@ -63,6 +69,10 @@ export interface ReaderScreenProps {
   /** Which panel is open. Shared, so a tool can open, focus, and close it. */
   readonly surface: SurfaceStore
   readonly guidance: GuidanceController
+  readonly tutorTools?: readonly ToolDefinition[]
+  readonly aiConnection: AiConnectionStore
+  readonly pendingAiIntent?: AiFeatureIntent
+  readonly onAiAuthorizationFinished: () => void
 }
 
 export function ReaderScreen({
@@ -76,7 +86,12 @@ export function ReaderScreen({
   presentation,
   surface,
   guidance,
+  tutorTools,
+  aiConnection,
+  pendingAiIntent,
+  onAiAuthorizationFinished,
 }: ReaderScreenProps) {
+  const [tutorAttachment, setTutorAttachment] = useState<TutorAttachment>()
   // Panel visibility is shared state, not local state: a tool can open, focus,
   // and close the study board, and the person can do the same, and neither may
   // act on a copy the other has already moved past. `VAL-BOARD-VIEW-PARITY`.
@@ -139,6 +154,9 @@ export function ReaderScreen({
   useEffect(() => {
     presentation.beginBook(DEFAULT_READER_STYLE)
     surface.reset()
+    if (pendingAiIntent?.feature === 'tutor' && pendingAiIntent.bookId === entry.id) {
+      surface.setPanel('tutor')
+    }
   }, [presentation, surface])
   const panel = surfaceState.panel
   const setPanel = useCallback((next: ReaderPanel) => surface.setPanel(next), [surface])
@@ -413,6 +431,17 @@ export function ReaderScreen({
           <button
             type="button"
             className="button button-quiet"
+            aria-label="Tutor"
+            aria-expanded={panel === 'tutor'}
+            aria-controls="reader-tutor-panel"
+            onClick={() => toggle('tutor')}
+          >
+            <MessageCircle size={16} aria-hidden="true" />
+            <span className="tool-label">Tutor</span>
+          </button>
+          <button
+            type="button"
+            className="button button-quiet"
             aria-label="Text settings"
             aria-pressed={panel === 'text'}
             aria-expanded={panel === 'text'}
@@ -432,6 +461,17 @@ export function ReaderScreen({
       <GuidanceIndicator controller={guidance} />
 
       <div className="reader-stage">
+        <TutorPanel bookId={entry.id} tools={tutorTools} connection={aiConnection}
+          readerReady={reader.phase === 'reading' && Boolean(tutorTools)}
+          open={panel === 'tutor'} attachment={tutorAttachment}
+          pendingIntent={pendingAiIntent}
+          onAuthorizationFinished={onAiAuthorizationFinished}
+          onClose={closePanel} onStudy={() => setPanel('study')}
+          beforeRedirect={async () => {
+            bookIndex.cancel()
+            await reader.flushReadingState()
+            await client.dispose()
+          }} />
         {panel === 'contents' ? (
           <ContentsPanel
             toc={reader.toc}
@@ -648,6 +688,13 @@ export function ReaderScreen({
 
           {reader.selection ? (
             <div className="selection-action" role="status">
+              <button type="button" className="button button-quiet" onClick={() => {
+                setTutorAttachment({ bookId: entry.id, selection: structuredClone(reader.selection!) })
+                setPanel('tutor')
+              }}>
+                <MessageCircle size={16} aria-hidden="true" />
+                Ask tutor
+              </button>
               <button type="button" className="button button-quiet" onClick={highlightSelection}>
                 <Highlighter size={16} aria-hidden="true" />
                 Highlight

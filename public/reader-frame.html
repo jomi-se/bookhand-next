@@ -2,6 +2,9 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- A reader document never inherits the app's optional gateway access.
+         This policy remains enforced when the persistent frame replaces DOM. -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'none'; connect-src 'none'; form-action 'none'" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bookhand reader frame</title>
   </head>

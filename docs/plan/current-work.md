@@ -1,6 +1,210 @@
 # Current work
 
-Last updated: 2026-09-03
+Documentation triage updated: 2026-09-05.
+
+## Local integration packaging, awaiting root merge approval (2026-09-08)
+
+Jose confirms connection and contextual follow-up work and requests reviewed
+local integration commits. [Merge readiness](bookhand-merge-readiness.md)
+tracks exact ownership/commit splits and checks. General flow confirmation does
+not pass every automatic reload/New-conversation acceptance scenario. Earlier
+credential reload and saved-Study reload/source-link confirmations retain their
+own specific evidence; new automatic conversation restore remains separately
+fixture-validated unless the owner reports that exact flow.
+
+[Unstable search anchors, navigation and timeout reporting](../issues/tutor-search-navigation.md)
+are **OPEN** defects, not solved by this integration. No pending indexing code
+was found or folded into this packaging. Main merge requires root's next go-ahead;
+no push, service/auth/Serve change or live mutation/model replay is authorized.
+
+Packaging checks pass: lint, typecheck, full unit suite, build, bundle, installed
+SDK/patch and setup verification. Independent qualitative review found no merge
+blocker; two non-blocking provider-address/schema-clarity follow-ups are recorded
+in the readiness note. The ideas cleanup is a separate commit; the obsolete SDK
+tarball remains untracked and preserved. These are local integration commits,
+not a merge or deployment.
+
+## Implemented locally: automatic last Tutor conversation (2026-09-08)
+
+Jose authorized minimal automatic restore, not a picker. Backend contract is
+Agent Connect 97c69d6; [bounded plan](tutor-last-conversation.md) and ADR 0007
+amendment capture tab-local same-book/same-authorization head matching,
+provider-owned history, active-head locking and no replay. Two sequential
+contract reviews complete; bounded port/core/UI implementation finished. No SDK
+architecture change or tool-catalog change: this feature does not itself require
+fresh consent (the earlier tool-description changes still do).
+
+Combined focused checks pass for connection, credential persistence, history
+parser, Tutor conversation, Tutor panel and app OAuth return; production build
+and focused lint passed. Independent lifecycle/lease review found no remaining
+blocker. The tests use synthetic history/model transport and real installed AI
+SDK; no live history/model acceptance is claimed. Tutor core is now 28/28 with
+explicit different-book/scope, absent/expired/pending/changed-head fresh outcomes
+and late history after disposal covered. Final UI truncation copy says some
+history was omitted, without claiming which messages were clipped. Parent final
+core/panel regression and rebuilt production artifact both passed.
+
+Read-only HTTPS fetch verifies :8445 serves the byte-identical local asset
+index-DiXsiEfF.js, SHA-256
+80dc4f9a56bbc44cee368684d4a237d3da6dd1d5738eec86f8e32fde62615516.
+No owner browser reload, live model/tool replay, proxy restart, service/Serve
+change, commit, merge or push. Root must coordinate proxy readiness/live smoke.
+Use a completed turn on this build before reloading: pre-feature conversations
+have no known book association and are deliberately not guessed from a list.
+
+## Tool-description follow-up (2026-09-08)
+
+Implemented plain-language exclusive/dependent-field guidance directly in tool
+descriptions: navigate_book, open_book, focus_passage, set_reading_style,
+set_study_board_view, create_study_lesson and upsert_study_item. Navigation
+explicitly requires ONE selector with all others omitted, not empty placeholders.
+Minimal JSON examples are included; search_book distinguishes index unavailable
+from no matches and warns that partial results are not exhaustive. Schemas,
+runtime validation, call shapes and consent binding are unchanged.
+
+Focused tool/library/connection tests, example validation through the installed
+SDK, focused lint, diff whitespace check and production build passed. Read-only
+HTTPS verification on :8445 serves index-khtm_nof.js matching the local asset:
+SHA-256 59ec59bfd55f64503fb90da79e660009d0c715f0b6a8a4a8417e8a641faa8574.
+This is served-artifact evidence, not a live model smoke. Descriptions participate
+in exact approved catalog equality, so existing Tutor grants need fresh consent;
+no automatic catalog expansion. No owner browser reload, consent, model calls,
+mutation replay, service changes, commit, merge or push performed.
+
+Agent Connect root now owns a conversation-history/reopening API implementation;
+it is no longer deferred upstream. Bookhand conversation UI remains gated on the
+validated contract handoff. Preserve existing dirty work; no UI work started.
+
+## Accepted follow-up: scoped connection persistence (2026-09-07)
+
+Jose requests credential reload persistence and remembered provider preferences.
+Amended ADR 0007 and [the bounded persistence contract](ai-connection-persistence.md)
+supersede the previous memory-only choice. Implementation must hold the origin
+Web Lock through uncancelled refresh/save, fail closed on orphan rotation, and
+preserve exact approved declarations. No chat/task replay or live consent work.
+Jose reports the saved lesson survives reload and its source link works.
+
+Persistence implemented and focused checks passed: 26 connection tests plus
+Tutor-panel/App-return checks; focused lint and TypeScript/build clean. Writer-tab
+refresh failures explicitly clear their own connection, guarded by persistent
+identity; no reliance on self storage events. Disconnect/resync and stale
+cross-tab callback races are covered. Detailed evidence and local build hash are
+in the persistence contract. No live model, consent, browser reload, service
+restart, push or deployment was performed by this implementation lane.
+
+Owner acceptance, relayed by Agent Connect Astra: Jose confirms the connection
+works after a phone reload without re-entering the provider address or repeating
+consent. Saved Study lesson persistence and source-link navigation are also
+owner-confirmed. This is real owner reload evidence, separate from deterministic
+refresh/rotation tests; it does not establish that a token refresh occurred.
+One initial attempt failed before a later success. Jose explicitly requests no
+investigation now; its cause remains unknown. Root is closing vertical-slice
+acceptance. Review/commit packaging is a separate follow-up, with no permission
+to sweep unrelated dirty work into a commit.
+
+## Implementation history: native OpenClaw auth and AI SDK (2026-09-06)
+
+Bounded follow-up: reported standalone prose rejection is confirmed as a
+declaration/runtime mismatch: `upsert_study_item` advertises foreign-kind fields
+that `toPayload` rejects. Close each discriminator's schema without widening
+runtime acceptance or changing flat call shape. Validate the exposed schema
+through the installed SDK and existing page validator using fixtures only.
+The changed catalog requires fresh owner consent; never bypass snapshot equality.
+Native-normalizer limitation verified offline against the pinned OpenClaw
+`packages/ai/src/providers/agent-tools-parameter-schema.ts` and
+`openai-tool-schema.ts`: both normal and strict outputs flatten the new closed
+branches into all 17 properties, `required: ["kind"]`,
+`additionalProperties: true`, and no `oneOf` or field dependencies. Therefore
+the local closure fix is NOT model-visible closure through this provider. Keep
+actionable descriptions and runtime rejection; no custom protocol or broad
+schema rewrite is authorized. Probe executed source only, no model/tool writes.
+Transport diagnostics are a separate bounded follow-up: preserve the original
+Error/cause identity in conversation memory only, with bounded allowlisted UI
+diagnostics, never raw error serialization/logging. Warn that interrupted tool
+turns may already have saved changes; no retry/checkpoint policy changes.
+Jose switched from the phone browser to Termux during the failed turn. This is
+context, not proof of suspension/network causality; add no visibility-change
+cancellation. A later successful lesson/follow-up is owner-reported, not an
+independent stored-content check. Subsequent owner acceptance confirmed the saved
+lesson survives reload and its source link returns to the passage. Do not
+reload or reauthorize Jose's active context on his behalf.
+
+Follow-up implemented: closed local standalone-block schemas plus explicit
+kind/field guidance; 36 tool tests and typecheck pass. Conversation now retains
+the original failure/cause tree privately through `getFailureCause()`, with
+bounded allowlisted diagnostics rendered separately and possible-tool-effects
+warnings. No raw logging/persistence/export or replay changes. Focused Tutor
+tests: 22 passed, including one error-result tool followed by HTTP 200 body-read
+failure, nested TypeError identity, secret exclusion and no replay. This fixture
+does not prove a successful mutation; the owner accepted that bounded evidence.
+Production build passed and read-only HTTPS fetch confirmed `:8445` serves the
+byte-identical local asset `index-CbI9_QXO.js`, SHA-256
+`bd728bcfefd931878239621e4026c4256145f82a5dfd16a9a01a1bb3368bf782`.
+No browser reload, consent, live tool invocation or service changes were made.
+
+The previous runtime-card/custom AgentChat replacement demo is superseded for
+new integration work. Current ownership, mapping and interface questions are in
+[`connect-your-ai-bookhand.md`](connect-your-ai-bookhand.md). Parent owns design,
+integration review and failure diagnosis; authorized Sol high-effort lanes own
+bounded edits against the now-validated `cf3b3d1` SDK artifact and required
+Open Responses continuation patch. Package, shared-connection, conversation and
+UI/wiring lanes are active under ADR 0007. Existing dirty work is preserved. No
+live services, credentials, Serve, push or publication changes authorized.
+
+Current local evidence: packaged dependency clean-install/export/continuation
+checks pass, as do integration typecheck and focused connection/conversation
+unit suites. The latter exercise the installed AI SDK against deterministic
+response fixtures, including partial-stream EOF without replay; they are not
+native provider or model evidence. Bounded independent shared-auth review is
+clear after fixes for stale returned intent, expiry during callback claiming,
+and malformed-state dismissal. App callback-recovery fixtures also pass.
+Disconnected production-build browser smoke passed at desktop and 412×915:
+real EPUB selection, draft/address/attachment retained across panel reopen,
+controls visible, no horizontal overflow, strict CSP and no console/page errors.
+Screenshots: ignored `artifacts/tutor-disconnected-smoke-20260906/`.
+Broad unit run: 514 passed, one failed: the reader-Foliate Section 23 workload
+deadline measured 18.14s against a 15s bound. Broad-suite success is not claimed
+and baseline causality has not been established. Full log:
+`/tmp/bookhand-command-logs/quiet-run.ZsvzyC.log`.
+The same workload test passed on a focused isolated rerun; this suggests load
+sensitivity but does not establish the cause or turn the broad run green.
+The live native-auth,
+source-linked Study hero remains unproven pending upstream runtime readiness.
+
+## Previous checkpoint: separate-gateway Tutor demo preparation
+
+This existing checkout is now on `work/openclaw-tutor-demo`, starting at
+`2c36f33`; pending Tutor implementation and unrelated edits remain intact.
+`main` has not moved. The runtime-neutral integration is the intended real
+Agent Connect demo instead of Canvas. Scope, reviewed acceptance, intent-only
+prompts and current evidence are in
+[`openclaw-tutor-demo.md`](openclaw-tutor-demo.md).
+
+No SDK API change is currently required. Actual subscription-backed testing is
+blocked on the Agent Connect instance supplying an isolated runtime/card after
+José selects its execution loop. Do not reuse the old personal gateway/card or
+restart `agc`. No push, public deployment, credentials, or CSP changes authorized;
+ordinary local Bookhand preview rebuild/restart is allowed.
+
+## Development-fork handoff
+
+Remaining root brainstorming is indexed in
+[`../ideas/README.md`](../ideas/README.md); these are not accepted implementation
+plans. The shipped remastering proposal and old handwritten defect reports were
+removed at the user's request. Code inspection found fixes for the main reports;
+no remaining runtime defect was confirmed during this documentation pass. Track
+fresh reproductions if problems recur rather than revive speculative backlog.
+
+Standalone EPUB restoration work lives in `/home/dev/epub-remaster`. This checkout
+tracks `bookhand-next`; leave the judged Bookhand repository and deployment
+unchanged. Agent Connect integration is now authorized under ADR 0006; current
+scope, validation requirements and progress live in
+[`agent-connect-tutor.md`](agent-connect-tutor.md). Ask Jose before any git push;
+no publishing or deployment is authorized.
+
+The execution notes below are the **2026-09-03 pre-submission snapshot**. Their
+deployment/recording instructions and runtime counts are historical, not current
+authorization to alter the submitted project.
 
 ## Next executable wave
 

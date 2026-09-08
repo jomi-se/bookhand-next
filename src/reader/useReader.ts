@@ -284,6 +284,7 @@ export function useReader({
     attach,
     detach,
     navigate,
+    flushReadingState: persistNow,
     onLocationChange,
     onSelectionChange,
     onSectionError,

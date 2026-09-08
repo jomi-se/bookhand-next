@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { BookCatalogEntry } from './domain/index.ts'
 import './library/library.css'
@@ -18,6 +18,11 @@ import { createDesignContextTool } from './webmcp/design-context-tool.ts'
 import { createLibraryTools } from './webmcp/library-tools.ts'
 import { createBookhandTools } from './webmcp/tools.ts'
 import { useWebMcpTools, type ToolCallReporter } from './webmcp/useWebMcpTools.ts'
+import { AiConnectionStore } from './ai/connection.ts'
+import {
+  inspectPendingAiReturn,
+  type PendingAiReturnStatus,
+} from './ai/pending-intent.ts'
 
 /**
  * The tools whose calls change how something looks. `get_design_context`
@@ -33,9 +38,17 @@ const DESIGN_BEARING_TOOLS = new Set([
 
 function App() {
   const runtime = useMemo(() => createAppRuntime(), [])
+  const aiConnection = useMemo(() => new AiConnectionStore(), [])
   const library = useLibrary({ client: runtime.client, ports: runtime.ports })
   const [reading, setReading] = useState<BookCatalogEntry>()
   const [readerCommands, setReaderCommands] = useState<BookhandCommands>()
+  const [pendingAiReturn, setPendingAiReturn] = useState<PendingAiReturnStatus | undefined>(() =>
+    inspectPendingAiReturn(),
+  )
+  const pendingAiIntent = pendingAiReturn?.kind === 'owned'
+    && pendingAiReturn.intent.feature === 'tutor'
+    ? pendingAiReturn.intent
+    : undefined
   const readingRef = useRef(reading)
   const agentOpenPending = useRef(false)
   const pendingReaderCommands = useRef<BookhandCommands | undefined>(undefined)
@@ -43,6 +56,11 @@ function App() {
 
   const books = library.books
   const diagnostics = library.diagnostics
+  useEffect(() => {
+    if (!pendingAiIntent || reading) return
+    const entry = books.find((book) => book.id === pendingAiIntent.bookId)
+    if (entry) setReading(entry)
+  }, [books, pendingAiIntent, reading])
 
   const publishReaderCommands = useCallback((commands: BookhandCommands | undefined) => {
     if (agentOpenPending.current) {
@@ -148,12 +166,16 @@ function App() {
   )
 
   const agent = useWebMcpTools({ createTools })
+  const tutorTools = useMemo(() => reading && readerCommands?.bookId === reading.id
+    ? createTools(() => {}).filter((tool) => tool.name !== 'open_book')
+    : undefined, [createTools, readerCommands, reading])
 
   const exitReader = useCallback(() => {
     setReading(undefined)
     designState.clear()
     void library.refresh()
   }, [designState, library])
+  const finishAiAuthorization = useCallback(() => setPendingAiReturn(undefined), [])
 
   if (reading) {
     return (
@@ -171,17 +193,45 @@ function App() {
         presentation={runtime.presentation}
         surface={runtime.surface}
         guidance={runtime.guidance}
+        tutorTools={tutorTools}
+        aiConnection={aiConnection}
+        pendingAiIntent={pendingAiIntent}
+        onAiAuthorizationFinished={finishAiAuthorization}
       />
     )
+  }
+
+  const invalidAiReturn = pendingAiReturn?.kind === 'invalid' ? pendingAiReturn : undefined
+  const unsupportedAiReturn = pendingAiReturn?.kind === 'owned'
+    && pendingAiReturn.intent.feature !== 'tutor' ? pendingAiReturn : undefined
+  const missingAiBook = pendingAiIntent && library.phase === 'ready' && !library.bootstrapping
+    && !books.some((book) => book.id === pendingAiIntent.bookId)
+  const pendingDraft = (invalidAiReturn?.intent?.draft
+    ?? unsupportedAiReturn?.intent.draft
+    ?? pendingAiIntent?.draft)?.trim()
+  const aiReturnNotice = invalidAiReturn
+    ? `${invalidAiReturn.message}${pendingDraft ? ` Your draft is still here: “${pendingDraft}”` : ''}`
+    : unsupportedAiReturn
+      ? `This AI return targets a feature that is not available here.${pendingDraft ? ` Your draft is still here: “${pendingDraft}”` : ''} Dismiss it and connect again from that feature.`
+      : missingAiBook
+        ? `Tutor could not reopen the book for this return. Your draft is still here: ${pendingDraft ? `“${pendingDraft}”` : '(no question drafted)'}. Open the same EPUB to continue, or dismiss this return.`
+        : undefined
+  const dismissAiReturn = () => {
+    aiConnection.dismissPendingAuthorization()
+    setPendingAiReturn(undefined)
   }
 
   return (
     <LibraryScreen
       {...library}
+      notice={aiReturnNotice ? {
+        tone: 'failure',
+        message: aiReturnNotice,
+      } : library.notice}
       onOpenBook={setReading}
       onImportFile={(file) => void library.importFile(file)}
       onRetry={() => void library.retry()}
-      onDismissNotice={library.dismissNotice}
+      onDismissNotice={aiReturnNotice ? dismissAiReturn : library.dismissNotice}
       agentStatus={agent.status}
     />
   )

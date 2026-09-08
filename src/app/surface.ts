@@ -12,7 +12,7 @@ import type { MutationOrigin, StudyBoardView } from '../domain/index.ts'
  * to read storage. `VAL-BOARD-VIEW-PARITY`.
  */
 
-export type ReaderPanel = 'contents' | 'search' | 'text' | 'study' | null
+export type ReaderPanel = 'contents' | 'search' | 'text' | 'study' | 'tutor' | null
 
 /**
  * `docked` and `expanded` are persistent layout preferences. `focus` and

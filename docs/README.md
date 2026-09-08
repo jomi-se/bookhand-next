@@ -9,9 +9,14 @@ Documentation is organized by authority rather than chronology:
 - `decisions/` contains accepted architectural decisions.
 - `design/` preserves approved visual direction artifacts.
 - `plan/current-work.md` is the resumable execution ledger.
+- `plan/connect-your-ai-bookhand.md` tracks the native OpenClaw OAuth/AI SDK integration.
+- `plan/ai-connection-persistence.md` and `plan/tutor-last-conversation.md` define its scoped persistence and restore boundaries.
+- `plan/bookhand-merge-readiness.md` records integration commit ownership, checks and merge authorization.
+- `plan/agent-connect-tutor.md` and `plan/openclaw-tutor-demo.md` preserve superseded runtime-card prototype evidence, not current onboarding instructions.
 - `contracts/` contains falsifiable validation targets for active slices.
 - `research/` contains dated external findings and source links.
 - `reviews/` contains dated design and implementation reviews.
+- `issues/` tracks reported open defects separately from completed implementation and unaccepted ideas.
 - `ideas/` contains unaccepted proposals; inclusion is not permission to implement.
 - `../experiments/` contains reproducible technical spikes and their measured
   outputs when the experiment is part of an accepted decision.
