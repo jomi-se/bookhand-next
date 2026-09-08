@@ -2,7 +2,37 @@
 
 Documentation triage updated: 2026-09-05.
 
-## Plugin SDK migration approved for local commit (2026-09-08)
+## Current checkpoint: main merged, cleanup complete (2026-09-08)
+
+Local checkout is on `main` at integration commit
+`ea3b18e31993adbf74e2778f6c30880fddefd055`; clean before this docs-only update.
+Agent Connect root reports the authorized fast-forward and removal of merged
+`work/bookhand-plugin-sdk` and `work/openclaw-tutor-demo` branches. The migration
+and packaging sections below preserve historical evidence, not pending merge
+instructions or current branch names.
+
+Root also reports that `feat/document-remaster` was already an ancestor of main.
+Its checkout, including the unique untracked review, was preserved intact at
+`artifacts/local-archive/2026-09-08/bookhand-remaster/`; `.git` was renamed to
+`.git.archived`, then worktree registration and merged branch were removed.
+This ledger pass verified that archive directory and `.git.archived` exist;
+the intact-content/no-data-loss assertion is root's cleanup report, not a new
+file-by-file audit. Do not treat the archive as an active Git worktree.
+
+Root reports origin remains `bookhand-next` and the judged original is unchanged.
+Live OpenClaw was relocated: plugin health passes at the same provider URL
+`https://artifex-box.tail246db1.ts.net/agent-connect`, grants preserved, but old
+conversation heads were reset by the restart. This is upstream runtime evidence;
+no health/auth/model call was made for this ledger update. Retained authorization
+does not imply old conversations can continue; use the existing unavailable-head
+handling and explicit fresh conversation, never replay prior prompts or tools.
+
+Previously verified Bookhand `:8445` serves byte-identical `ea3b18e` assets with
+strict CSP. Known search/navigation/timeout defects and owner-evidence limits
+remain unchanged. This update runs no tests, changes no services and pushes
+nothing; only the current-work ledger is committed.
+
+## Historical: plugin SDK migration approved for local commit (2026-09-08)
 
 Agent Connect root authorized bounded consumer decoupling, not live cutover.
 Checkout inspected clean on `main` at `11f04cc`. Upstream plan:
