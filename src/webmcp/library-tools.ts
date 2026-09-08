@@ -78,7 +78,7 @@ export function createLibraryTools(options: LibraryToolOptions): readonly ToolDe
     {
       name: 'open_book',
       description:
-        'Open one book so its reading tools become available. Send exactly one selector: the id from list_books, or a distinctive part of its title. An ambiguous title opens nothing and returns bounded candidates.',
+        'Open one book so its reading tools become available. Supply exactly ONE selector: bookId from list_books OR a distinctive title fragment. Omit the other field entirely, not an empty placeholder or null. Minimal JSON: {"title":"Calculus"}. An ambiguous title opens nothing and returns bounded candidates; select a returned bookId instead of guessing.',
       inputSchema: {
         type: 'object',
         oneOf: [

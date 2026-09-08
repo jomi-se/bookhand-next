@@ -88,6 +88,43 @@ const RANGE_SCHEMA = {
   additionalProperties: false,
 } as const
 
+const STUDY_ITEM_COMMON_PROPERTIES = {
+  id: {
+    type: 'string',
+    description:
+      'Revise an existing block instead of adding one. You may only revise blocks you created, and must supply the updateToken you were given when you created it.',
+  },
+  updateToken: {
+    type: 'string',
+    description: 'The token returned when you created this block. Required to revise it.',
+  },
+  actionToken: {
+    type: 'string',
+    description:
+      'Your own name for this action. Retrying with the same token and the same content returns the first result instead of writing twice.',
+  },
+  actionGroupId: {
+    type: 'string',
+    description: 'Correlate blocks from one intent for provenance. Each legacy block is undone separately.',
+  },
+  bookId: BOOK_ID_SCHEMA,
+  sourceRange: RANGE_SCHEMA,
+  sourceQuote: {
+    type: 'string',
+    maxLength: 32_000,
+    description:
+      'The exact text sourceRange covers. Required with sourceRange, and checked against the book, so a block can never cite words the book does not contain.',
+  },
+  sourceLabel: { type: 'string', maxLength: 500 },
+} as const
+
+const STUDY_ITEM_DEPENDENT_REQUIRED = {
+  id: ['updateToken'],
+  updateToken: ['id'],
+  sourceRange: ['bookId', 'sourceQuote'],
+  sourceQuote: ['bookId', 'sourceRange'],
+} as const
+
 /**
  * State the receipt back to the agent in the terms it needs to act on next.
  *
@@ -301,7 +338,7 @@ export function createBookhandTools(options: ToolHostOptions): readonly ToolDefi
     {
       name: 'navigate_book',
       description:
-        'Move the reader to a place in the book: an exact range CFI, a table-of-contents href, a section index, or the previous/next page. The person sees the book move.',
+        'Move the visible reader. Supply exactly ONE navigation selector: cfi, href, sectionIndex, or direction. Omit the other fields entirely, not empty placeholders or null. Minimal JSON examples: {"direction":"next"} or {"sectionIndex":3}. For exact locations, copy cfi from a Bookhand result or href from the table of contents; never invent either.',
       inputSchema: {
         type: 'object',
         oneOf: [
@@ -349,7 +386,7 @@ export function createBookhandTools(options: ToolHostOptions): readonly ToolDefi
     {
       name: 'search_book',
       description:
-        'Search the locally indexed text of the open book. This never scans the live EPUB, moves the reader, or changes the selection. Results include exact CFIs; call navigate_book separately only when the person wants to see one.',
+        'Search the locally indexed text of the open book. This never scans the live EPUB, moves the reader, or changes the selection. Results include exact CFIs; call navigate_book separately only when the person wants to see one. Minimal JSON: {"query":"integration"}. Index unavailable means search is not ready, NOT that the book has no matches; partial results are not exhaustive. Use get_table_of_contents and get_reading_context to orient while indexing prepares.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -393,7 +430,8 @@ export function createBookhandTools(options: ToolHostOptions): readonly ToolDefi
     {
       name: 'focus_passage',
       description:
-        'Temporarily guide the person to an exact passage returned by Bookhand. Pass the returned range object unchanged under `range` (the older flattened range fields remain accepted). This verifies the source, moves the visible reader, points at the exact words with a transient highlight, underline, or outline, and shows Back and Stop without creating an annotation, study block, or saved tutor state. Prefer a focused sentence or paragraph; broad visible ranges receive a calm block cue rather than dozens of fragment outlines. Use this to point at the book; use navigate_book for ordinary navigation.',
+        'Temporarily guide the person to an exact passage returned by Bookhand. Pass the returned range object unchanged under `range` (the older flattened range fields remain accepted). This verifies the source, moves the visible reader, points at the exact words with a transient highlight, underline, or outline, and shows Back and Stop without creating an annotation, study block, or saved tutor state. Prefer a focused sentence or paragraph; broad visible ranges receive a calm block cue rather than dozens of fragment outlines. Use this to point at the book; use navigate_book for ordinary navigation.' +
+        " Use either range OR the flattened sectionIndex/startCfi/endCfi/textFingerprint fields, never both. Prefer range copied unchanged; omit all flattened fields entirely. Always include bookId and the exact quote for that range.",
       inputSchema: {
         type: 'object',
         properties: {
@@ -545,7 +583,8 @@ export function createBookhandTools(options: ToolHostOptions): readonly ToolDefi
     {
       name: 'set_reading_style',
       description:
-        'Change how the book is presented: text size, line height, measure, paragraph spacing, page layout (auto, single, or spread), theme, or custom book CSS. Send only the fields you mean to change — anything you restate would overwrite a change the person made a moment ago. Spread remains one column on compact/coarse-pointer devices. Every change is reversible by the person with one action. Picking a shipped theme or adjusting size needs nothing else; custom CSS additionally requires designContextVersion from get_design_context, which explains the semantic roles, contrast floors, and what this CSS can and cannot reach.',
+        'Change how the book is presented: text size, line height, measure, paragraph spacing, page layout (auto, single, or spread), theme, or custom book CSS. Send only the fields you mean to change — anything you restate would overwrite a change the person made a moment ago. Spread remains one column on compact/coarse-pointer devices. Every change is reversible by the person with one action. Picking a shipped theme or adjusting size needs nothing else; custom CSS additionally requires designContextVersion from get_design_context, which explains the semantic roles, contrast floors, and what this CSS can and cannot reach.' +
+        " Choose one operation: one or more style fields, undo:true alone, or reset:true alone. Omit unused fields entirely, including undo/reset; false or empty placeholders are not valid substitutes. Minimal JSON examples: {\"fontSizePercent\":120}, {\"undo\":true}, {\"reset\":true}. customCss must be accompanied by the current designContextVersion.",
       inputSchema: {
         type: 'object',
         oneOf: [
@@ -690,7 +729,8 @@ export function createBookhandTools(options: ToolHostOptions): readonly ToolDefi
     {
       name: 'create_study_lesson',
       description:
-        'Create one durable, titled lesson as an ordered composition of prose, quotation, equation, steps, and question blocks. The whole lesson lands atomically or not at all, so a teaching sequence never appears as unrelated partial records. Call get_design_context first and follow its hierarchy guidance. Stable lesson and block ids let later tools reveal or address the exact teaching artifact.',
+        'Create one durable, titled lesson as an ordered composition of prose, quotation, equation, steps, and question blocks. The whole lesson lands atomically or not at all, so a teaching sequence never appears as unrelated partial records. Call get_design_context first and follow its hierarchy guidance. Stable lesson and block ids let later tools reveal or address the exact teaching artifact.' +
+        " Each block needs a unique id and exactly one kind with its own fields: prose requires text; quotation requires text, optionally attribution; equation requires expression, optionally caption; steps requires steps, optionally title; question requires prompt, optionally answer. Omit fields of other kinds entirely, even empty strings. Minimal prose block: {\"id\":\"explanation\",\"kind\":\"prose\",\"text\":\"Your explanation.\"}. For a source-linked lesson, send bookId, sourceRange and sourceQuote together, copied from Bookhand; otherwise omit that source triple. The top-level title, blocks, actionToken and current designContextVersion are required.",
       inputSchema: {
         type: 'object',
         properties: {
@@ -822,67 +862,76 @@ export function createBookhandTools(options: ToolHostOptions): readonly ToolDefi
     {
       name: 'upsert_study_item',
       description:
-        'Put a durable study block on this book’s board, or update one you created. Blocks are prose, quotation, equation, steps, or question. They are stored locally across reloads and each block remains individually reversible or removable by the person. Attach the source range so the person can jump back to where it came from. One ordinary block needs nothing else; before composing several blocks into one piece of teaching, call get_design_context for the composition hierarchy this board expects.',
+        'Put a durable study block on this book’s board, or update one you created. Send only the fields for the chosen kind, never empty placeholders for another kind: prose uses text; quotation uses text and optional attribution; equation uses expression and optional caption; steps uses steps and optional title; question uses prompt and optional answer. Common fields allowed for any kind are actionToken, actionGroupId, sourceLabel, id with updateToken, and bookId with sourceRange and sourceQuote. Blocks are stored locally across reloads and each remains individually reversible or removable by the person. Attach the source range so the person can jump back to where it came from. One ordinary block needs nothing else; before composing several blocks into one piece of teaching, call get_design_context for the composition hierarchy this board expects.' +
+        " Minimal JSON: {\"kind\":\"prose\",\"text\":\"Your explanation.\"}. To update, supply id and its returned updateToken together; omit both when creating. Supply bookId, sourceRange and sourceQuote together for a source link, or omit all three. Do not invent source text or ownership tokens.",
       inputSchema: {
         type: 'object',
-        properties: {
-          id: {
-            type: 'string',
-            description:
-              'Revise an existing block instead of adding one. You may only revise blocks you created, and must supply the updateToken you were given when you created it.',
-          },
-          updateToken: {
-            type: 'string',
-            description: 'The token returned when you created this block. Required to revise it.',
-          },
-          actionToken: {
-            type: 'string',
-            description:
-              'Your own name for this action. Retrying with the same token and the same content returns the first result instead of writing twice.',
-          },
-          actionGroupId: {
-            type: 'string',
-            description:
-              'Correlate blocks from one intent for provenance. Each legacy block is undone separately.',
-          },
-          kind: { type: 'string', enum: [...STUDY_ITEM_KINDS] },
-          text: { type: 'string', maxLength: 32_000, description: 'Prose or quotation body.' },
-          attribution: { type: 'string', maxLength: 500 },
-          expression: { type: 'string', maxLength: 5_000, description: 'Equation body.' },
-          caption: { type: 'string', maxLength: 500 },
-          title: { type: 'string', maxLength: 500, description: 'Title for a steps block.' },
-          steps: {
-            type: 'array',
-            minItems: 1,
-            maxItems: 100,
-            items: { type: 'string', minLength: 1, maxLength: 5_000 },
-          },
-          prompt: { type: 'string', maxLength: 20_000, description: 'Question body.' },
-          answer: { type: 'string', maxLength: 20_000 },
-          bookId: BOOK_ID_SCHEMA,
-          sourceRange: RANGE_SCHEMA,
-          sourceQuote: {
-            type: 'string',
-            maxLength: 32_000,
-            description:
-              'The exact text sourceRange covers. Required with sourceRange, and checked against the book, so a block can never cite words the book does not contain.',
-          },
-          sourceLabel: { type: 'string', maxLength: 500 },
-        },
         oneOf: [
-          { properties: { kind: { const: 'prose' } }, required: ['kind', 'text'] },
-          { properties: { kind: { const: 'quotation' } }, required: ['kind', 'text'] },
-          { properties: { kind: { const: 'equation' } }, required: ['kind', 'expression'] },
-          { properties: { kind: { const: 'steps' } }, required: ['kind', 'steps'] },
-          { properties: { kind: { const: 'question' } }, required: ['kind', 'prompt'] },
+          {
+            type: 'object',
+            properties: {
+              ...STUDY_ITEM_COMMON_PROPERTIES,
+              kind: { const: 'prose' },
+              text: { type: 'string', maxLength: 32_000, description: 'Prose body.' },
+            },
+            required: ['kind', 'text'],
+            dependentRequired: STUDY_ITEM_DEPENDENT_REQUIRED,
+            additionalProperties: false,
+          },
+          {
+            type: 'object',
+            properties: {
+              ...STUDY_ITEM_COMMON_PROPERTIES,
+              kind: { const: 'quotation' },
+              text: { type: 'string', maxLength: 32_000, description: 'Quotation body.' },
+              attribution: { type: 'string', maxLength: 500 },
+            },
+            required: ['kind', 'text'],
+            dependentRequired: STUDY_ITEM_DEPENDENT_REQUIRED,
+            additionalProperties: false,
+          },
+          {
+            type: 'object',
+            properties: {
+              ...STUDY_ITEM_COMMON_PROPERTIES,
+              kind: { const: 'equation' },
+              expression: { type: 'string', maxLength: 5_000, description: 'Equation body.' },
+              caption: { type: 'string', maxLength: 500 },
+            },
+            required: ['kind', 'expression'],
+            dependentRequired: STUDY_ITEM_DEPENDENT_REQUIRED,
+            additionalProperties: false,
+          },
+          {
+            type: 'object',
+            properties: {
+              ...STUDY_ITEM_COMMON_PROPERTIES,
+              kind: { const: 'steps' },
+              title: { type: 'string', maxLength: 500, description: 'Title for a steps block.' },
+              steps: {
+                type: 'array',
+                minItems: 1,
+                maxItems: 100,
+                items: { type: 'string', minLength: 1, maxLength: 5_000 },
+              },
+            },
+            required: ['kind', 'steps'],
+            dependentRequired: STUDY_ITEM_DEPENDENT_REQUIRED,
+            additionalProperties: false,
+          },
+          {
+            type: 'object',
+            properties: {
+              ...STUDY_ITEM_COMMON_PROPERTIES,
+              kind: { const: 'question' },
+              prompt: { type: 'string', maxLength: 20_000, description: 'Question body.' },
+              answer: { type: 'string', maxLength: 20_000 },
+            },
+            required: ['kind', 'prompt'],
+            dependentRequired: STUDY_ITEM_DEPENDENT_REQUIRED,
+            additionalProperties: false,
+          },
         ],
-        dependentRequired: {
-          id: ['updateToken'],
-          updateToken: ['id'],
-          sourceRange: ['bookId', 'sourceQuote'],
-          sourceQuote: ['bookId', 'sourceRange'],
-        },
-        additionalProperties: false,
       },
       execute: (input) =>
         run('upsert_study_item', () => 'added to the study board', async () => {
@@ -1185,7 +1234,8 @@ export function createBookhandTools(options: ToolHostOptions): readonly ToolDefi
     {
       name: 'set_study_board_view',
       description:
-        'Change what the study board is doing. "docked" and "expanded" are layout preferences the person keeps; "focus" brings the board forward and moves focus to it without changing their preference; "close" returns to the book without deleting anything. Prefer focus when you only want the person to look at what you added.',
+        'Change what the study board is doing. "docked" and "expanded" are layout preferences the person keeps; "focus" brings the board forward and moves focus to it without changing their preference; "close" returns to the book without deleting anything. Prefer focus when you only want the person to look at what you added.' +
+        " Supply either view OR undo:true, never both; omit the unused field entirely, not false, null or an empty string. Minimal JSON examples: {\"view\":\"focus\"} or {\"undo\":true}.",
       inputSchema: {
         type: 'object',
         oneOf: [

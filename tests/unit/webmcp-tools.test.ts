@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
+import { createAiSdkApplicationTools, type JsonSchema } from '@open-agent-connect/web'
+import { asSchema } from 'ai'
 
 import type { BookRange, MutationReceipt, ReaderStyle } from '../../src/domain/index.ts'
 import {
@@ -188,6 +190,29 @@ describe('the WebMCP tool surface', () => {
         required: ['ok', 'message'],
       })
     }
+  })
+
+  it('documents selector constraints and supplies schema-valid minimal examples', async () => {
+    const { tool } = setup()
+    for (const name of ['navigate_book', 'search_book', 'set_reading_style', 'upsert_study_item', 'set_study_board_view']) {
+      const definition = tool(name)
+      const sdk = createAiSdkApplicationTools([{
+        name,
+        description: definition.description,
+        inputSchema: definition.inputSchema as JsonSchema,
+        execute: vi.fn(),
+      }], { connectionId: 'description-examples' })
+      const validate = asSchema(sdk[name]!.inputSchema).validate!
+      const examples = definition.description.match(/\{[^{}]+\}/g) ?? []
+      expect(examples.length).toBeGreaterThan(0)
+      for (const example of examples) {
+        expect(await validate(JSON.parse(example))).toMatchObject({ success: true })
+      }
+    }
+    expect(tool('navigate_book').description).toContain('exactly ONE navigation selector')
+    expect(tool('focus_passage').description).toContain('never both')
+    expect(tool('create_study_lesson').description).toContain('Omit fields of other kinds entirely')
+    expect(tool('search_book').description).toContain('NOT that the book has no matches')
   })
 
   it('offers exact temporary guidance tools without durable mutation fields', async () => {
@@ -635,8 +660,64 @@ describe('the WebMCP tool surface', () => {
       expression: 'x',
     })
     expect(result.isError).toBe(true)
-    expect(result.content[0].text).toContain('does not accept')
+    expect(result.content[0].text).toContain('exactly one allowed operation')
     expect(commands.upsertStudyItem).not.toHaveBeenCalled()
+  })
+
+  it('publishes closed kind-specific study schemas to Bookhand and the installed AI SDK', async () => {
+    const { tool, commands } = setup()
+    const definition = tool('upsert_study_item')
+    const safeExecute = vi.fn()
+    const sdkTools = createAiSdkApplicationTools(
+      [
+        {
+          name: definition.name,
+          description: definition.description,
+          inputSchema: definition.inputSchema as JsonSchema,
+          execute: safeExecute,
+        },
+      ],
+      { connectionId: 'schema-test' },
+    )
+    const validate = asSchema(sdkTools.upsert_study_item!.inputSchema).validate
+    expect(validate).toBeTypeOf('function')
+
+    const valid = [
+      { kind: 'prose', text: 'A concise explanation.' },
+      { kind: 'quotation', text: 'An exact quotation.' },
+      { kind: 'equation', expression: 'y = x^2' },
+      { kind: 'steps', steps: ['Choose a point.'] },
+      { kind: 'question', prompt: 'Why does the slope change?' },
+    ]
+    for (const input of valid) {
+      expect(await validate!(input)).toMatchObject({ success: true, value: input })
+      expect((await definition.execute(input)).isError).toBeFalsy()
+    }
+    expect(commands.upsertStudyItem).toHaveBeenCalledTimes(5)
+    vi.mocked(commands.upsertStudyItem).mockClear()
+
+    const invalid = [
+      { kind: 'prose', text: 'A note.', expression: '' },
+      { kind: 'quotation', text: 'A quote.', caption: '' },
+      { kind: 'equation', expression: 'x', answer: '' },
+      { kind: 'steps', steps: ['First.'], attribution: '' },
+      { kind: 'question', prompt: 'Why?', title: '' },
+    ]
+    for (const input of invalid) {
+      expect(await validate!(input)).toMatchObject({ success: false })
+      expect((await definition.execute(input)).isError).toBe(true)
+    }
+    // The SDK validator intentionally implements draft 7, where
+    // dependentRequired is not a keyword. Bookhand's existing handler boundary
+    // remains the enforcement point for these coupled fields.
+    for (const input of [
+      { kind: 'prose', text: 'A revision.', id: 'item-1' },
+      { kind: 'prose', text: 'A citation.', bookId: 'book-1', sourceRange: range },
+    ]) {
+      expect((await definition.execute(input)).isError).toBe(true)
+    }
+    expect(commands.upsertStudyItem).not.toHaveBeenCalled()
+    expect(safeExecute).not.toHaveBeenCalled()
   })
 
   it('rejects missing or duplicate lesson block ids before calling commands', async () => {
