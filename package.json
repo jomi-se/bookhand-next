@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "postinstall": "patch-package",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "fixtures:generate": "node scripts/generate-epub-fixtures.mjs",
@@ -17,9 +18,10 @@
     "test:e2e:tutor-harness": "vite build --mode test-harness && BOOKHAND_TEST_HARNESS=1 playwright test tests/e2e/tutor-guidance.spec.ts --project=chromium",
     "typecheck": "tsc -b --pretty false",
     "verify:bundle": "node scripts/verify-production-bundle.mjs",
+    "verify:ai-sdk": "node scripts/verify-ai-sdk-packaging.mjs",
     "verify:setup": "node scripts/verify-agent-setup.mjs",
     "check:live": "node scripts/check-live-webmcp.mjs",
-    "verify": "npm run lint && npm run typecheck && npm run test:unit && npm run build && npm run verify:bundle && npm run test:e2e:built && npm run verify:setup",
+    "verify": "npm run lint && npm run typecheck && npm run test:unit && npm run build && npm run verify:bundle && npm run verify:ai-sdk && npm run test:e2e:built && npm run verify:setup",
     "deploy": "npm run build && npx wrangler deploy",
     "deploy:dry": "npm run build && npx wrangler deploy --dry-run",
     "serve:tailnet": "npm run build && npx vite preview --host 127.0.0.1 --port 4173"
@@ -27,11 +29,15 @@
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
     "@fontsource-variable/source-serif-4": "^5.3.0",
+    "@ai-sdk/open-responses": "2.0.39",
+    "@open-agent-connect/web": "file:vendor/open-agent-connect-web-0.0.3-cf3b3d1.tgz",
     "@sqlite.org/sqlite-wasm": "^3.53.0-build1",
     "foliate-js": "https://github.com/johnfactotum/foliate-js/archive/78914aef4466eb960965702401634c2cb348e9b1.tar.gz",
     "lucide-react": "^1.39.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "ai": "7.0.93",
+    "zod": "4.1.11"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
@@ -46,6 +52,7 @@
     "fflate": "^0.8.3",
     "jsdom": "^29.1.1",
     "oxlint": "^1.79.0",
+    "patch-package": "8.0.1",
     "typescript": "~6.0.2",
     "vite": "^8.2.2",
     "vite-plugin-static-copy": "^4.1.1",

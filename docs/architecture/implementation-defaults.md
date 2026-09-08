@@ -29,6 +29,11 @@ Do not add Redux, a server framework, an ORM, Turso, Dexie, MiniSearch,
 `sqlite-vec`, another vector database, LangChain, an agent SDK, or a general
 canvas framework in v0.
 
+Post-submission exception: ADR 0006 authorizes the optional Agent Connect Tutor
+in `bookhand-next`; ADR 0007 supersedes its transport with native OpenClaw
+authorization and AI SDK execution. It reuses page-owned tool handlers and does
+not change the submitted app or make ordinary reading depend on a provider.
+
 ## Reader boundary
 
 Create a `ReaderAdapter` around Foliate.js. UI components and WebMCP handlers
