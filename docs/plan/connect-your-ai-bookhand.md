@@ -1,7 +1,9 @@
 # Connect your AI: Bookhand integration ownership
 
 Started: 2026-09-06. Implementation packaged for local merge review, 2026-09-08.
-Validated SDK handoff: `cf3b3d1adc1f546bdc6786f243bcf059821366e8`.
+Current SDK: `3cc49ec32981553faa01729e0e2cee6cdea39dd4`, including CSP fix
+`90b4e75`; [bounded refresh evidence](sdk-csp-refresh.md). Original integration
+handoff below was `cf3b3d1adc1f546bdc6786f243bcf059821366e8`.
 
 Current evidence: Jose confirms connection and contextual follow-up work. Earlier
 owner reports separately confirm credential reload persistence and saved Study
@@ -33,7 +35,7 @@ focused tool-refusal/body-read-failure scenario (not a successful mutation), ori
 identity and secret-exclusion assertions, plus bounded cycle/depth checks.
 Physical transport causality is not inferred from the error wrapper or app switch.
 
-The supplied SDK bytes have SHA-256
+The original integration SDK bytes had SHA-256
 `cec8778c0afa030f9126ef9d1ed122b46f3b3cc8fe43bd2f068df052a62035b2`;
 the required Open Responses continuation patch has SHA-256
 `99f31168f18f59f13cbc0b60ec85c0bdd302213716980ddfbac63e5e1abce571`.

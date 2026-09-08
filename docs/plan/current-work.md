@@ -2,6 +2,18 @@
 
 Documentation triage updated: 2026-09-05.
 
+## Local main merged; bounded CSP dependency refresh (2026-09-08)
+
+Root authorized the fast-forward and local main reached `7c74142`; integration
+branch preserved. The obsolete 9736495 SDK tarball is now in ignored
+`artifacts/local-archive/2026-09-08/`, checksum unchanged. The earlier packaging
+sections below are historical, not an outstanding merge authorization request.
+
+Root subsequently supplied AC `3cc49ec` with the strict-CSP Zod import fix.
+[SDK CSP refresh](sdk-csp-refresh.md) records bounded package/build/production
+browser verification. No tool catalog, conversation or consent change, no live
+model calls, services or push. Known defects and owner-evidence limits remain.
+
 ## Local integration packaging, awaiting root merge approval (2026-09-08)
 
 Jose confirms connection and contextual follow-up work and requests reviewed

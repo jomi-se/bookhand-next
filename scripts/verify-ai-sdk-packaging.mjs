@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
+import { config as zodConfig } from 'zod/v4/core'
 
 import { AGENT_CONNECT_CONTINUATION_PATCH } from '@ai-sdk/open-responses'
 import {
@@ -23,7 +24,7 @@ const expected = {
   '@open-agent-connect/web': '0.0.3',
   ai: '7.0.93',
   'patch-package': '8.0.1',
-  zod: '4.1.11',
+  zod: '4.4.3',
 }
 
 for (const [name, version] of Object.entries(expected)) {
@@ -35,10 +36,18 @@ for (const [name, version] of Object.entries(expected)) {
   }
 }
 
+const sdkPackage = JSON.parse(await readFile(
+  new URL('../node_modules/@open-agent-connect/web/package.json', import.meta.url), 'utf8',
+))
+if (!sdkPackage.sideEffects?.includes('./dist/zod-jitless.js') ||
+    sdkPackage.dependencies.zod !== expected.zod || zodConfig().jitless !== true) {
+  throw new Error('The shared Zod jitless bootstrap or bundler side-effect declaration is missing')
+}
+
 const artifacts = [
   [
-    '../vendor/open-agent-connect-web-0.0.3-cf3b3d1.tgz',
-    'cec8778c0afa030f9126ef9d1ed122b46f3b3cc8fe43bd2f068df052a62035b2',
+    '../vendor/open-agent-connect-web-0.0.3-3cc49ec.tgz',
+    '57d38dad6d57fc82786faa8a684e342814d75a0e9bafdaff1d1d7827a5f90a80',
   ],
   [
     '../patches/@ai-sdk+open-responses+2.0.39.patch',
