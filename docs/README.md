@@ -12,6 +12,7 @@ Documentation is organized by authority rather than chronology:
 - `contracts/` contains falsifiable validation targets for active slices.
 - `research/` contains dated external findings and source links.
 - `reviews/` contains dated design and implementation reviews.
+- `ideas/` contains unaccepted proposals; inclusion is not permission to implement.
 - `../experiments/` contains reproducible technical spikes and their measured
   outputs when the experiment is part of an accepted decision.
 
