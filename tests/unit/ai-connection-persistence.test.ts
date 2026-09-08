@@ -18,6 +18,8 @@ import {
   AI_CONNECTION_KEY,
   AI_CONNECTION_LOCK,
   AI_CONNECTION_PREFS_KEY,
+  readAiConnectionPreferences,
+  readPersistedAiConnection,
   readyRecord,
   rotatingRecord,
   writeAiConnectionPreferences,
@@ -328,6 +330,62 @@ function storeOptions(options: {
 }
 
 describe('AiConnectionStore persistence', () => {
+  it.each(['', '/agent-connect'])('restores a persisted SDK connection with the %s provider layout', async (path) => {
+    const now = Date.now()
+    const shared = new SharedStorage()
+    const base = await connection({ now })
+    const persisted = await seedReady({
+      shared, now, connection: { ...base, endpoint: `${PROVIDER_ORIGIN}${path}/v1/responses` },
+    })
+    const restored = await readPersistedAiConnection(shared.storage, APP_ORIGIN, now)
+    expect(restored?.status).toBe('ready')
+    if (restored?.status !== 'ready') throw new Error('Expected ready fixture')
+    expect(restored.connection).toEqual(persisted.connection)
+    expect(Object.isFrozen(restored.connection)).toBe(true)
+    expect(restored.grantExpiresAt).toBe(persisted.grantExpiresAt)
+    const models = modelCapture()
+    const fixture = oauthFixture()
+    const store = new AiConnectionStore(storeOptions({
+      shared, locks: new SerialLocks(), now: () => now,
+      generation: () => 'restored-layout', fixture, models,
+    }))
+    await store.ready
+    try {
+      expect(store.getSnapshot()).toMatchObject({ phase: 'connected', providerUrl: `${PROVIDER_ORIGIN}${path}` })
+      await expect(models.getters[0]()).resolves.toBe('access-old')
+      expect(fixture.refreshCalls()).toHaveLength(0)
+    } finally { store.dispose() }
+  })
+
+  it.each(['', '/agent-connect'])('preserves provider preferences for the supported %s layout', (path) => {
+    const shared = new SharedStorage()
+    const providerUrl = `${PROVIDER_ORIGIN}${path}`
+    writeAiConnectionPreferences(shared.storage, { providerUrl, experience: 'tailscale' })
+    expect(readAiConnectionPreferences(shared.storage)).toEqual({ providerUrl, experience: 'tailscale' })
+  })
+
+  it('retains the SDK validation cause without changing the saved-record envelope', async () => {
+    const now = Date.now()
+    const shared = new SharedStorage()
+    const persisted = await seedReady({ shared, now })
+    // Simulate corrupted stored bytes directly, rather than asking the SDK
+    // serializer to manufacture an invalid record.
+    shared.storage.setItem(AI_CONNECTION_KEY, JSON.stringify({
+      ...persisted, connection: { ...persisted.connection, applicationToolsHash: 'invalid' },
+    }))
+    const error = await readPersistedAiConnection(shared.storage, APP_ORIGIN, now).catch((cause: unknown) => cause)
+    expect(error).toBeInstanceOf(Error)
+    expect(error).toMatchObject({ message: 'Saved AI authorization was invalid; connect again', cause: expect.any(Error) })
+    expect(shared.storage.getItem(AI_CONNECTION_KEY)).toContain('connection-1')
+  })
+
+  it('rejects refresh authority beyond the original app grant even when the SDK record is valid', async () => {
+    const now = Date.now()
+    const shared = new SharedStorage()
+    await seedReady({ shared, now, grantExpiresAt: now + 60_000 })
+    await expect(readPersistedAiConnection(shared.storage, APP_ORIGIN, now)).rejects.toThrow(/expired/)
+  })
+
   it('restores a validated grant and preferences across stores, retaining preferences after disconnect', async () => {
     const now = Date.now()
     const shared = new SharedStorage()
@@ -664,7 +722,8 @@ describe('AiConnectionStore persistence', () => {
     for (const invalid of invalidConnections) {
       const shared = new SharedStorage()
       const locks = new SerialLocks()
-      await seedReady({ shared, now, connection: invalid })
+      const persisted = await seedReady({ shared, now })
+      shared.storage.setItem(AI_CONNECTION_KEY, JSON.stringify({ ...persisted, connection: invalid }))
       const models = modelCapture()
       const store = new AiConnectionStore(storeOptions({
         shared, locks, now: () => now, generation: () => 'generation-1', fixture: oauthFixture(), models,

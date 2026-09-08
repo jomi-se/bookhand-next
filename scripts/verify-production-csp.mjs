@@ -53,7 +53,9 @@ try {
   })
   const origin = `http://127.0.0.1:${server.address().port}`
   browser = await chromium.launch()
-  const context = await browser.newContext()
+  const context = await browser.newContext(process.argv.includes('--phone')
+    ? { viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true }
+    : {})
   const externalRequests = []
   await context.route('**/*', (route) => {
     if (new URL(route.request().url()).origin !== origin) {

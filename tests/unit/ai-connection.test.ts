@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { webcrypto } from 'node:crypto'
-import { createOpenClawAccessTokenGetter } from '@open-agent-connect/web'
+import { createOpenClawAccessTokenGetter, OpenClawConnectionError } from '@open-agent-connect/web'
 import type { LanguageModel } from 'ai'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -128,10 +128,14 @@ function platform(options: {
   }
 }
 
-function metadata(origin = 'https://openclaw.test') {
+function metadata(providerUrl = 'https://openclaw.test') {
+  const provider = new URL(providerUrl)
+  const origin = provider.origin
+  const plugin = provider.pathname === '/agent-connect'
+  const issuer = plugin ? `${origin}/agent-connect` : origin
   return {
     authorization: {
-      issuer: origin,
+      issuer,
       authorization_endpoint: `${origin}/agent-connect/oauth/authorize`,
       token_endpoint: `${origin}/agent-connect/oauth/token`,
       revocation_endpoint: `${origin}/agent-connect/oauth/revoke`,
@@ -146,8 +150,8 @@ function metadata(origin = 'https://openclaw.test') {
       authorization_response_iss_parameter_supported: true,
     },
     resource: {
-      resource: `${origin}/v1/responses`,
-      authorization_servers: [origin],
+      resource: plugin ? `${origin}/agent-connect/v1/responses` : `${origin}/v1/responses`,
+      authorization_servers: [issuer],
       scopes_supported: ['responses'],
       bearer_methods_supported: ['header'],
       authorization_details_types_supported: ['agent_connect'],
@@ -167,6 +171,7 @@ function fixtureFetch(options: {
   initialExpiresIn?: number
   tokenResponse?: Promise<Response>
   revokeResponse?: Response
+  providerUrl?: string
 } = {}) {
   const calls: { url: string; body?: URLSearchParams }[] = []
   let tokenCalls = 0
@@ -174,9 +179,11 @@ function fixtureFetch(options: {
     const url = String(input)
     const body = init?.body instanceof URLSearchParams ? init.body : undefined
     calls.push({ url, ...(body ? { body } : {}) })
-    const profile = metadata()
-    if (url.endsWith('/.well-known/oauth-authorization-server')) return json(profile.authorization)
-    if (url.endsWith('/.well-known/oauth-protected-resource')) return json(profile.resource)
+    const profile = metadata(options.providerUrl)
+    if (url.endsWith('/.well-known/oauth-authorization-server')
+      || url.endsWith('/.well-known/oauth-authorization-server/agent-connect')) return json(profile.authorization)
+    if (url.endsWith('/.well-known/oauth-protected-resource')
+      || url.endsWith('/.well-known/oauth-protected-resource/agent-connect/v1/responses')) return json(profile.resource)
     if (url.endsWith('/agent-connect/oauth/par')) {
       return json({ request_uri: 'urn:ietf:params:oauth:request_uri:bookhand', expires_in: 600 })
     }
@@ -223,10 +230,12 @@ async function authorizedStore(options: {
   initialExpiresIn?: number
   tokenResponse?: Promise<Response>
   generation?: () => string
+  providerUrl?: string
 }) {
   const fixture = fixtureFetch({
     initialExpiresIn: options.initialExpiresIn,
     tokenResponse: options.tokenResponse,
+    providerUrl: options.providerUrl,
   })
   const browser = platform({ generation: options.generation })
   const store = new AiConnectionStore({
@@ -242,13 +251,17 @@ async function authorizedStore(options: {
     fetch: options.historyFetch,
   })
   const tools = options.tools ?? [tool()]
-  browser.setUrl(await startAuthorization(store, tools))
+  browser.setUrl(await startAuthorization(store, tools, options.providerUrl))
   await store.finishAuthorization()
   return { store, browser, fixture, tools }
 }
 
-async function startAuthorization(store: AiConnectionStore, tools: readonly ToolDefinition[] = [tool()]) {
-  store.setProviderUrl('https://openclaw.test')
+async function startAuthorization(
+  store: AiConnectionStore,
+  tools: readonly ToolDefinition[] = [tool()],
+  providerUrl = 'https://openclaw.test',
+) {
+  store.setProviderUrl(providerUrl)
   await store.authorize({ tools, intent, beforeRedirect: async () => undefined })
   return callbackFromPending()
 }
@@ -297,6 +310,22 @@ describe('AiConnectionStore with the public OpenClaw SDK', () => {
     expect(localStorage.getItem('bookhand.ai.connection.v1')).toMatch(/access-|refresh-/)
     expect(sessionStorage.getItem(AI_PENDING_AUTHORIZATION_KEY)).toBeNull()
     expect(JSON.stringify(store.getSnapshot())).not.toMatch(/access-|refresh-|code-1/)
+  })
+
+  it('rediscovers a plugin callback from its verified issuer and preserves that provider address', async () => {
+    const providerUrl = 'https://openclaw.test/agent-connect'
+    const { store, fixture } = await authorizedStore({
+      providerUrl,
+      historyFetch: vi.fn<typeof globalThis.fetch>(),
+    })
+
+    expect(store.getSnapshot()).toMatchObject({ phase: 'connected', providerUrl })
+    expect(fixture.calls.filter(({ url }) => url.includes('/.well-known/')).map(({ url }) => url)).toEqual([
+      'https://openclaw.test/.well-known/oauth-authorization-server/agent-connect',
+      'https://openclaw.test/.well-known/oauth-protected-resource/agent-connect/v1/responses',
+      'https://openclaw.test/.well-known/oauth-authorization-server/agent-connect',
+      'https://openclaw.test/.well-known/oauth-protected-resource/agent-connect/v1/responses',
+    ])
   })
 
   it('compares the complete fixed declaration snapshot, including nested schemas', async () => {
@@ -840,8 +869,8 @@ describe('AiConnectionStore with the public OpenClaw SDK', () => {
         cache: 'no-store',
         signal: expect.any(AbortSignal),
         headers: {
-          accept: 'application/json',
-          authorization: 'Bearer access-1',
+          Accept: 'application/json',
+          Authorization: 'Bearer access-1',
         },
       })
       expect(Object.keys(init?.headers as Record<string, string>)).not.toContain('origin')
@@ -872,7 +901,7 @@ describe('AiConnectionStore with the public OpenClaw SDK', () => {
     expect(afterRefresh.scopeId).toBe(before.scopeId)
     expect(afterRefresh.generation).toBe(before.generation)
     expect(historyFetch.mock.calls[0]?.[1]).toMatchObject({
-      headers: expect.objectContaining({ authorization: 'Bearer rotated-access' }),
+      headers: expect.objectContaining({ Authorization: 'Bearer rotated-access' }),
     })
 
     let reloadGeneration = 0
@@ -921,7 +950,14 @@ describe('AiConnectionStore with the public OpenClaw SDK', () => {
     }
     expect(caught).toBeInstanceOf(Error)
     expect(caught).not.toBeInstanceOf(ConversationHistoryUnavailableError)
-    expect((caught as Error).message).toBe(`OpenClaw conversation history request failed (HTTP ${status})`)
+    expect(caught).toBeInstanceOf(OpenClawConnectionError)
+    expect(caught).toMatchObject({
+      code: status === 401 || status === 403 ? 'reauthorization_required' : 'transport_error',
+      message: status === 401 || status === 403
+        ? 'OpenClaw conversation history authorization failed'
+        : 'OpenClaw conversation history request failed',
+      status,
+    })
     expect((caught as Error).message).not.toContain('Private provider detail')
   })
 
@@ -932,7 +968,8 @@ describe('AiConnectionStore with the public OpenClaw SDK', () => {
     const access = store.getHistoryAccess(tools)
 
     await expect(access.list(new AbortController().signal)).rejects.toMatchObject({
-      message: 'OpenClaw conversation history could not be loaded',
+      code: 'transport_error',
+      message: 'OpenClaw conversation history request failed',
       cause: networkCause,
     })
     historyFetch.mockResolvedValueOnce(json({ conversations: [{ expiresAt: 'wrong' }] }))
@@ -960,6 +997,32 @@ describe('AiConnectionStore with the public OpenClaw SDK', () => {
     await store.disconnect()
     resolveHistory(json({ conversations: [] }))
     await expect(reading).rejects.toThrow(/connection changed/)
+    expect(() => store.getHistoryAccess(tools)).toThrow(/Connect your AI/)
+  })
+
+  it('does not dispatch history after disconnect wins the post-token SDK await gap', async () => {
+    const historyFetch = vi.fn<typeof globalThis.fetch>(async () => json({ conversations: [] }))
+    const { store, tools } = await authorizedStore({ historyFetch })
+    const access = store.getHistoryAccess(tools)
+    let checks = 0
+    let disconnecting: Promise<void> | undefined
+    const signal = {
+      aborted: false,
+      reason: undefined,
+      throwIfAborted: () => {
+        checks += 1
+        // The seventh check is the SDK's post-token await boundary. Disconnecting
+        // here must be observed by Bookhand's synchronous pre-dispatch fetch guard.
+        if (checks === 7) disconnecting = store.disconnect()
+      },
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    } as unknown as AbortSignal
+
+    await expect(access.list(signal)).rejects.toThrow(/connection changed/)
+    await disconnecting
+    expect(checks).toBeGreaterThanOrEqual(9)
+    expect(historyFetch).not.toHaveBeenCalled()
     expect(() => store.getHistoryAccess(tools)).toThrow(/Connect your AI/)
   })
 })

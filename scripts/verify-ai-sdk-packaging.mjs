@@ -11,12 +11,18 @@ import {
   createAiSdkOpenResponsesModel,
   createAiSdkOpenResponsesPrepareStep,
   createOpenClawAccessTokenGetter,
+  createOpenClawConversationClient,
   discoverOpenClawProvider,
+  getOpenClawConnectionProviderUrl,
+  normalizeOpenClawProviderUrl,
+  OpenClawConversationUnavailableError,
+  parseOpenClawConnection,
   parseOpenClawAuthorizationTransaction,
   refreshOpenClawConnection,
   revokeOpenClawConnection,
   selectAiSdkOpenResponsesCheckpoint,
   serializeOpenClawAuthorizationTransaction,
+  serializeOpenClawConnection,
 } from '@open-agent-connect/web'
 
 const expected = {
@@ -46,8 +52,8 @@ if (!sdkPackage.sideEffects?.includes('./dist/zod-jitless.js') ||
 
 const artifacts = [
   [
-    '../vendor/open-agent-connect-web-0.0.3-3cc49ec.tgz',
-    '57d38dad6d57fc82786faa8a684e342814d75a0e9bafdaff1d1d7827a5f90a80',
+    '../vendor/open-agent-connect-web-0.0.3-e3fa090.tgz',
+    'ccd489d55189df32654c3e3bf2dc667ee65545d4d0d453f52eff7cbbfb128480',
   ],
   [
     '../patches/@ai-sdk+open-responses+2.0.39.patch',
@@ -68,6 +74,12 @@ if (AGENT_CONNECT_CONTINUATION_PATCH !== '2.0.39.1') {
 }
 
 const openClawAuthorizationExports = {
+  createOpenClawConversationClient,
+  getOpenClawConnectionProviderUrl,
+  normalizeOpenClawProviderUrl,
+  OpenClawConversationUnavailableError,
+  parseOpenClawConnection,
+  serializeOpenClawConnection,
   beginOpenClawAuthorization,
   completeOpenClawAuthorization,
   createOpenClawAccessTokenGetter,
@@ -117,4 +129,4 @@ if (checkpoint !== 'response-terminal') {
   throw new Error('The public checkpoint helper did not select a successful terminal response')
 }
 
-console.log('AI SDK packaging verified')
+console.log('AI SDK packaging verified (approved source e3fa090)')

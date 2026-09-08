@@ -1,5 +1,24 @@
 # Temporary SDK build
 
+## Current approved plugin SDK — e3fa090
+
+On branch `work/bookhand-plugin-sdk`, package.json points to
+`open-agent-connect-web-0.0.3-e3fa090.tgz`, supplied by Agent Connect
+root from `/home/dev/agent-connect/dist/open-agent-connect-web-0.0.3.tgz`.
+SHA-256: `ccd489d55189df32654c3e3bf2dc667ee65545d4d0d453f52eff7cbbfb128480`.
+Approved source: `e3fa090809e1197dac4a7347a6f48c78240bef44`. Root reports completed
+SDK review, SDK tests/typecheck/build/external package smoke, and real installed
+stock-plugin composition passing on Node 24.15. Those are upstream evidence;
+Bookhand did not repeat live provider/auth flows. Refresh CAS identity is retained
+and history JSON is bounded to 1 MiB. No live cutover or npm publication.
+Bytes are identical to the tested `candidate-ccd489d` artifact; only the filename
+and references changed after source approval.
+Bookhand's own checks are recorded in `docs/plan/plugin-sdk-migration.md`.
+This replaces the earlier unreviewed `94a58b5` provisional test artifact.
+Historical reviewed baseline below remains available.
+
+## Historical baseline — 3cc49ec (not the active dependency)
+
 `open-agent-connect-web-0.0.3-3cc49ec.tgz` is the local Agent Connect SDK build
 supplied by its implementation instance, from commit
 `3cc49ec32981553faa01729e0e2cee6cdea39dd4` in

@@ -3,7 +3,9 @@ import {
   completeOpenClawAuthorization,
   createAiSdkOpenResponsesModel,
   createOpenClawAccessTokenGetter,
+  createOpenClawConversationClient,
   discoverOpenClawProvider,
+  getOpenClawConnectionProviderUrl,
   parseOpenClawAuthorizationTransaction,
   revokeOpenClawConnection,
   serializeOpenClawAuthorizationTransaction,
@@ -16,10 +18,6 @@ import {
 import type { LanguageModel } from 'ai'
 import type { ToolDefinition } from '../webmcp/model-context.ts'
 import {
-  ConversationHistoryUnavailableError,
-  isUnavailableHistoryResponse,
-  parseConversationDescriptors,
-  parseExecutionHistory,
   type TutorHistoryAccess,
 } from './conversation-history.ts'
 import {
@@ -292,33 +290,43 @@ export class AiConnectionStore {
     const current = this.#approvedCurrent(tools)
     const scopeId = current.persistentId
     const generation = current.generation
-    const endpoint = current.connection.endpoint
-    const get = (url: URL, signal: AbortSignal): Promise<unknown> => this.#getHistory(
-      scopeId,
-      generation,
-      url,
-      signal,
-    )
+    const client = createOpenClawConversationClient({
+      connection: current.connection,
+      getAccessToken: async (signal) => {
+        this.#guardHistoryAccess(scopeId, generation, signal)
+        const accessToken = await this.#getAccessToken(scopeId, signal)
+        this.#guardHistoryAccess(scopeId, generation, signal)
+        return accessToken
+      },
+      fetch: (input, init) => {
+        this.#guardHistoryAccess(scopeId, generation, init?.signal ?? undefined)
+        return this.#fetch(input, init)
+      },
+    })
     const access: TutorHistoryAccess = {
       scopeId,
       generation,
       list: async (signal) => {
-        const value = await get(new URL('/v1/agent-connect/conversations', endpoint), signal)
         this.#guardHistoryAccess(scopeId, generation, signal)
-        const descriptors = parseConversationDescriptors(value)
+        let descriptors
+        try {
+          descriptors = await client.list({ signal })
+        } catch (error) {
+          this.#guardHistoryAccess(scopeId, generation, signal)
+          throw error
+        }
         this.#guardHistoryAccess(scopeId, generation, signal)
         return descriptors
       },
       history: async (conversationId, signal) => {
-        if (!/^[a-f0-9]{36}$/.test(conversationId)) {
-          throw new Error('Conversation history identifier was invalid')
-        }
-        const value = await get(
-          new URL(`/v1/agent-connect/conversations/${conversationId}/history`, endpoint),
-          signal,
-        )
         this.#guardHistoryAccess(scopeId, generation, signal)
-        const history = parseExecutionHistory(value)
+        let history
+        try {
+          history = await client.history(conversationId, { signal })
+        } catch (error) {
+          this.#guardHistoryAccess(scopeId, generation, signal)
+          throw error
+        }
         this.#guardHistoryAccess(scopeId, generation, signal)
         return history
       },
@@ -380,18 +388,18 @@ export class AiConnectionStore {
     if (!ownsAuthorizationCallback(callback, transaction)) return undefined
     if (!isStrictAuthorizationCallback(callback, transaction)) {
       this.#setError(new Error('OpenClaw authorization callback was invalid'), 'OpenClaw authorization callback was invalid', {
-        providerUrl: transaction.providerOrigin, experience: transaction.experience,
+        providerUrl: transaction.issuer, experience: transaction.experience,
       })
       return intent
     }
 
     const operation = this.#beginAuthorizationOperation(false)
     const controller = this.#authorizationController!
-    this.#setSnapshot({ phase: 'connecting', providerUrl: transaction.providerOrigin, experience: transaction.experience })
+    this.#setSnapshot({ phase: 'connecting', providerUrl: transaction.issuer, experience: transaction.experience })
     try {
       this.#assertPendingFresh(pending.expiresAt)
       const provider = await this.#sdk.discover({
-        providerUrl: transaction.providerOrigin, experience: transaction.experience, signal: controller.signal,
+        providerUrl: transaction.issuer, experience: transaction.experience, signal: controller.signal,
       })
       this.#guardOperation(operation)
       if (callback.searchParams.has('code')) {
@@ -418,7 +426,7 @@ export class AiConnectionStore {
         return undefined
       }
       this.#setError(error, 'OpenClaw authorization could not be completed', {
-        providerUrl: transaction.providerOrigin, experience: transaction.experience,
+        providerUrl: transaction.issuer, experience: transaction.experience,
       })
       this.#removePendingIf(pending.transaction)
       this.#replaceCleanCallback(callback)
@@ -459,7 +467,7 @@ export class AiConnectionStore {
     if (existing?.persistentId === record.id) {
       if (!sameImmutableConnection(existing, record)) throw new Error('Saved AI authorization changed unexpectedly; connect again')
       existing.connection = record.connection
-      this.#setSnapshot({ phase: 'connected', providerUrl: record.connection.providerOrigin, experience: record.experience, generation: existing.generation })
+      this.#setSnapshot({ phase: 'connected', providerUrl: getOpenClawConnectionProviderUrl(record.connection), experience: record.experience, generation: existing.generation })
       return
     }
     const generation = this.#platform.createGeneration()
@@ -474,7 +482,7 @@ export class AiConnectionStore {
       grantExpiresAt: record.grantExpiresAt,
       connection: record.connection, model,
     }
-    this.#setSnapshot({ phase: 'connected', providerUrl: record.connection.providerOrigin, experience: record.experience, generation })
+    this.#setSnapshot({ phase: 'connected', providerUrl: getOpenClawConnectionProviderUrl(record.connection), experience: record.experience, generation })
   }
 
   #getAccessToken(persistentId: string, signal?: AbortSignal): Promise<string> {
@@ -541,66 +549,8 @@ export class AiConnectionStore {
     return current
   }
 
-  async #getHistory(
-    persistentId: string,
-    generation: string,
-    url: URL,
-    signal: AbortSignal,
-  ): Promise<unknown> {
-    this.#guardHistoryAccess(persistentId, generation, signal)
-    let accessToken: string
-    try {
-      accessToken = await this.#getAccessToken(persistentId, signal)
-    } catch (error) {
-      rethrowAbort(signal, error)
-      throw new Error('OpenClaw conversation history could not be authorized', { cause: error })
-    }
-    this.#guardHistoryAccess(persistentId, generation, signal)
-
-    let response: Response
-    try {
-      response = await this.#fetch(url, {
-        method: 'GET',
-        headers: {
-          accept: 'application/json',
-          authorization: `Bearer ${accessToken}`,
-        },
-        credentials: 'omit',
-        redirect: 'error',
-        cache: 'no-store',
-        signal,
-      })
-    } catch (error) {
-      rethrowAbort(signal, error)
-      this.#guardHistoryAccess(persistentId, generation, signal)
-      throw new Error('OpenClaw conversation history could not be loaded', { cause: error })
-    }
-    this.#guardHistoryAccess(persistentId, generation, signal)
-
-    const maximumBytes = response.ok
-      ? (url.pathname.endsWith('/history') ? 1024 * 1024 : 64 * 1024)
-      : 16 * 1024
-    let value: unknown
-    try {
-      value = await readBoundedJson(response, maximumBytes, signal)
-    } catch (error) {
-      rethrowAbort(signal, error)
-      this.#guardHistoryAccess(persistentId, generation, signal)
-      throw new Error('OpenClaw returned an invalid conversation history response', { cause: error })
-    }
-    this.#guardHistoryAccess(persistentId, generation, signal)
-
-    if (!response.ok) {
-      if (isUnavailableHistoryResponse(response.status, value)) {
-        throw new ConversationHistoryUnavailableError()
-      }
-      throw new Error(`OpenClaw conversation history request failed (HTTP ${response.status})`)
-    }
-    return value
-  }
-
-  #guardHistoryAccess(persistentId: string, generation: string, signal: AbortSignal): void {
-    signal.throwIfAborted()
+  #guardHistoryAccess(persistentId: string, generation: string, signal?: AbortSignal): void {
+    signal?.throwIfAborted()
     const current = this.#current
     if (this.#disposed || this.#snapshot.phase !== 'connected'
       || current?.persistentId !== persistentId || current.generation !== generation) {
@@ -830,42 +780,6 @@ function waitForCaller<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> 
     signal.addEventListener('abort', abort, { once: true })
     void promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort))
   })
-}
-
-async function readBoundedJson(response: Response, maximumBytes: number, signal: AbortSignal): Promise<unknown> {
-  const declaredLength = Number(response.headers.get('content-length'))
-  if (Number.isFinite(declaredLength) && declaredLength > maximumBytes) {
-    throw new Error('Conversation history response exceeded its size limit')
-  }
-  if (!response.body) return JSON.parse(await response.text()) as unknown
-
-  const reader = response.body.getReader()
-  const decoder = new TextDecoder()
-  let bytes = 0
-  let text = ''
-  try {
-    while (true) {
-      signal.throwIfAborted()
-      const chunk = await reader.read()
-      if (chunk.done) break
-      bytes += chunk.value.byteLength
-      if (bytes > maximumBytes) {
-        await reader.cancel()
-        throw new Error('Conversation history response exceeded its size limit')
-      }
-      text += decoder.decode(chunk.value, { stream: true })
-    }
-    text += decoder.decode()
-  } finally {
-    reader.releaseLock()
-  }
-  signal.throwIfAborted()
-  return JSON.parse(text) as unknown
-}
-
-function rethrowAbort(signal: AbortSignal, error: unknown): void {
-  signal.throwIfAborted()
-  if (error instanceof Error && error.name === 'AbortError') throw error
 }
 
 function defaultPlatform(): AiConnectionPlatformPort {

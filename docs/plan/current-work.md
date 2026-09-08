@@ -2,6 +2,44 @@
 
 Documentation triage updated: 2026-09-05.
 
+## Plugin SDK migration approved for local commit (2026-09-08)
+
+Agent Connect root authorized bounded consumer decoupling, not live cutover.
+Checkout inspected clean on `main` at `11f04cc`. Upstream plan:
+`/home/dev/agent-connect/docs/plan/plugin-sdk-bookhand-migration.md`, following
+plugin-host `1b8b67a`. Root approved exact SDK signatures; source migration is
+complete against approved SDK source `e3fa090809e1197dac4a7347a6f48c78240bef44`,
+with byte-identical hash `ccd489d…` to the tested candidate. Root reports real
+installed stock-plugin composition PASS on Node 24.15 and approves this migration
+diff, including the dispatch guard. [Exact evidence](plugin-sdk-migration.md).
+Root authorized branch `work/bookhand-plugin-sdk`; preparation and subsequent
+migration work live there. Local main remains at `11f04cc`; no extra worktree.
+
+Migration ownership: replace route/fetch/parser duplication in
+`src/ai/conversation-history.ts` and `connection.ts` with SDK history client;
+delegate inner record/schema/hash validation in `connection-persistence.ts`;
+use SDK provider URL helpers and transaction issuer for callback rediscovery.
+Keep app envelope/origin checks, absolute grant cap, full rotation lock/CAS,
+markers, cancellation, connection/book generations, catalog and no replay.
+
+Contract checkpoint resolved by root: history `expiresAt` is epoch milliseconds
+(`Date.now()` plus TTL milliseconds); the upstream plan's seconds wording was
+corrected. Preserve existing units, with no conversion or magnitude inference.
+SDK unavailable error must retain the fresh-vs-recoverable
+distinction without changing existing restore behavior.
+
+Focused installed-SDK connection/persistence/history/restore tests for both
+provider layouts and phone-width production strict-CSP smoke completed. No
+model/auth/consent replay, service/Serve, merge or push changes. No validation
+against old SDK bytes or invented exports. Candidate connection/
+history tests (37/37), persistence, Tutor core/panel, package/patch check, build,
+lint, bundle and phone-width strict-CSP import pass. Independent review's
+token-to-fetch await gap is closed with a synchronous dispatch guard and focused
+regression. These are deterministic local checks, not live plugin OAuth proof.
+Root authorized the bounded local commit; no merge or push. Filename/provenance
+finalization leaves SDK bytes unchanged; only package/hash/reference checks are
+repeated. Local main remains untouched.
+
 ## Local main merged; bounded CSP dependency refresh (2026-09-08)
 
 Root authorized the fast-forward and local main reached `7c74142`; integration

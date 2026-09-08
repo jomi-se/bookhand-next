@@ -1,23 +1,98 @@
-import { describe, expect, it } from 'vitest'
 import {
-  parseConversationDescriptors,
-  parseExecutionHistory,
-} from '../../src/ai/conversation-history.ts'
+  OpenClawConversationUnavailableError,
+  createOpenClawConversationClient,
+  type OpenClawConnection,
+} from '@open-agent-connect/web'
+import { describe, expect, it, vi } from 'vitest'
+import { ConversationHistoryUnavailableError } from '../../src/ai/conversation-history.ts'
 
 const conversationId = '0123456789abcdef0123456789abcdef0123'
 
-describe('conversation history projection validation', () => {
-  it('copies only the exact descriptor and inert execution text allowlist', () => {
-    const descriptors = parseConversationDescriptors({
-      conversations: [{
-        conversationId,
-        expiresAt: 2_000_000_000_000,
-        canContinue: true,
-        previousResponseId: 'resp_1',
-        sessionKey: 'private-session',
-      }],
-      providerMetadata: { grant: 'private-grant' },
+function connection(endpoint = 'https://openclaw.test/v1/responses'): OpenClawConnection {
+  return {
+    version: 1,
+    providerOrigin: 'https://openclaw.test',
+    endpoint,
+    clientId: 'https://bookhand.test',
+    accessToken: 'not-used-directly',
+    refreshToken: 'refresh-token',
+    expiresAt: '2099-01-01T00:00:00.000Z',
+    refreshTokenExpiresAt: '2099-01-02T00:00:00.000Z',
+    model: 'openclaw/default',
+    applicationTools: [],
+    applicationToolsHash: 'A'.repeat(43),
+  }
+}
+
+function json(value: unknown, status = 200): Response {
+  return new Response(JSON.stringify(value), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+function clientReturning(value: unknown, endpoint?: string) {
+  const fetch = vi.fn<typeof globalThis.fetch>(async () => json(value))
+  return {
+    client: createOpenClawConversationClient({
+      connection: connection(endpoint),
+      getAccessToken: async () => 'access-token',
+      fetch,
+    }),
+    fetch,
+  }
+}
+
+describe('conversation history SDK projection', () => {
+  it('retains the SDK unavailable-error identity at the Tutor boundary', () => {
+    expect(ConversationHistoryUnavailableError).toBe(OpenClawConversationUnavailableError)
+  })
+
+  it.each([
+    ['standalone', 'https://openclaw.test/v1/responses', 'https://openclaw.test/v1/agent-connect/conversations'],
+    ['plugin', 'https://openclaw.test/agent-connect/v1/responses', 'https://openclaw.test/agent-connect/v1/conversations'],
+  ])('uses the real SDK projection and route for the %s layout', async (_layout, endpoint, conversationsUrl) => {
+    const inert = '<img src=x onerror="globalThis.compromised=true"><script>bad()</script>'
+    const getAccessToken = vi.fn(async () => 'access-token')
+    const fetch = vi.fn<typeof globalThis.fetch>(async (input) => {
+      const url = String(input)
+      if (url === conversationsUrl) {
+        return json({
+          conversations: [{
+            conversationId,
+            expiresAt: 2_000_000_000_000,
+            canContinue: true,
+            previousResponseId: 'resp_1',
+            sessionKey: 'private-session',
+          }],
+          providerMetadata: { grant: 'private-grant' },
+        })
+      }
+      if (url === `${conversationsUrl}/${conversationId}/history`) {
+        return json({
+          conversationId,
+          expiresAt: 2_000_000_000_000,
+          canContinue: true,
+          previousResponseId: 'resp_1',
+          projection: 'execution-history',
+          entries: [
+            { kind: 'input', text: inert, senderIsOwner: true, toolResult: 'secret' },
+            { kind: 'assistant', text: 'Safe answer', reasoning: 'private chain' },
+          ],
+          truncated: false,
+          system: 'private instructions',
+        })
+      }
+      throw new Error(`Unexpected conversation URL: ${url}`)
     })
+    const client = createOpenClawConversationClient({
+      connection: connection(endpoint),
+      getAccessToken,
+      fetch,
+    })
+    const signal = new AbortController().signal
+
+    const descriptors = await client.list({ signal })
     expect(descriptors).toEqual([{
       conversationId,
       expiresAt: 2_000_000_000_000,
@@ -26,20 +101,7 @@ describe('conversation history projection validation', () => {
     }])
     expect(JSON.stringify(descriptors)).not.toContain('private')
 
-    const inert = '<img src=x onerror="globalThis.compromised=true"><script>bad()</script>'
-    const history = parseExecutionHistory({
-      conversationId,
-      expiresAt: 2_000_000_000_000,
-      canContinue: true,
-      previousResponseId: 'resp_1',
-      projection: 'execution-history',
-      entries: [
-        { kind: 'input', text: inert, senderIsOwner: true, toolResult: 'secret' },
-        { kind: 'assistant', text: 'Safe answer', reasoning: 'private chain' },
-      ],
-      truncated: false,
-      system: 'private instructions',
-    })
+    const history = await client.history(conversationId, { signal })
     expect(history).toEqual({
       conversationId,
       expiresAt: 2_000_000_000_000,
@@ -54,23 +116,32 @@ describe('conversation history projection validation', () => {
     })
     expect(history.entries[0]?.text).toBe(inert)
     expect(JSON.stringify(history)).not.toMatch(/senderIsOwner|toolResult|reasoning|private/)
+    expect(getAccessToken).toHaveBeenCalledTimes(2)
+    expect(getAccessToken).toHaveBeenCalledWith(signal)
   })
 
-  it('accepts pending descriptors only without a response head', () => {
-    expect(parseConversationDescriptors({
+  it('accepts pending descriptors only without a response head', async () => {
+    const pending = clientReturning({
       conversations: [{ conversationId, expiresAt: 123, canContinue: false }],
-    })).toEqual([{ conversationId, expiresAt: 123, canContinue: false }])
-    expect(() => parseConversationDescriptors({
+    })
+    await expect(pending.client.list()).resolves.toEqual([{
+      conversationId,
+      expiresAt: 123,
+      canContinue: false,
+    }])
+
+    const malformed = clientReturning({
       conversations: [{
         conversationId,
         expiresAt: 123,
         canContinue: false,
         previousResponseId: 'resp_pending',
       }],
-    })).toThrow(/invalid conversation history response/)
+    })
+    await expect(malformed.client.list()).rejects.toThrow(/invalid conversation history response/)
   })
 
-  it('rejects malformed descriptor and projection shapes', () => {
+  it('rejects malformed descriptor and projection shapes', async () => {
     const descriptor = {
       conversationId,
       expiresAt: 123,
@@ -87,26 +158,30 @@ describe('conversation history projection validation', () => {
       { conversations: Array.from({ length: 9 }, () => descriptor) },
     ]
     for (const value of malformed) {
-      expect(() => parseConversationDescriptors(value)).toThrow(/invalid conversation history response/)
+      await expect(clientReturning(value).client.list()).rejects.toThrow(/invalid conversation history response/)
     }
 
-    expect(() => parseExecutionHistory({ ...descriptor, entries: [], truncated: false }))
-      .toThrow(/invalid conversation history response/)
-    expect(() => parseExecutionHistory({
-      ...descriptor,
-      projection: 'execution-history',
-      entries: [{ kind: 'system', text: 'instructions' }],
-      truncated: false,
-    })).toThrow(/invalid conversation history response/)
-    expect(() => parseExecutionHistory({
-      ...descriptor,
-      projection: 'execution-history',
-      entries: [{ kind: 'input', text: '' }],
-      truncated: false,
-    })).toThrow(/invalid conversation history response/)
+    for (const value of [
+      { ...descriptor, entries: [], truncated: false },
+      {
+        ...descriptor,
+        projection: 'execution-history',
+        entries: [{ kind: 'system', text: 'instructions' }],
+        truncated: false,
+      },
+      {
+        ...descriptor,
+        projection: 'execution-history',
+        entries: [{ kind: 'input', text: '' }],
+        truncated: false,
+      },
+    ]) {
+      await expect(clientReturning(value).client.history(conversationId))
+        .rejects.toThrow(/invalid conversation history response/)
+    }
   })
 
-  it('enforces the backend entry count, per-entry and aggregate text bounds', () => {
+  it('enforces the SDK entry count, per-entry and aggregate text bounds', async () => {
     const descriptor = {
       conversationId,
       expiresAt: 123,
@@ -115,24 +190,24 @@ describe('conversation history projection validation', () => {
       projection: 'execution-history',
       truncated: true,
     } as const
-    expect(parseExecutionHistory({
+    await expect(clientReturning({
       ...descriptor,
       entries: Array.from({ length: 8 }, () => ({ kind: 'input', text: 'x'.repeat(16_384) })),
-    }).entries).toHaveLength(8)
-    expect(() => parseExecutionHistory({
+    }).client.history(conversationId)).resolves.toMatchObject({ entries: expect.any(Array) })
+    await expect(clientReturning({
       ...descriptor,
       entries: [{ kind: 'input', text: 'x'.repeat(16_385) }],
-    })).toThrow(/invalid conversation history response/)
-    expect(() => parseExecutionHistory({
+    }).client.history(conversationId)).rejects.toThrow(/invalid conversation history response/)
+    await expect(clientReturning({
       ...descriptor,
       entries: [
         ...Array.from({ length: 8 }, () => ({ kind: 'input', text: 'x'.repeat(16_384) })),
         { kind: 'assistant', text: 'overflow' },
       ],
-    })).toThrow(/invalid conversation history response/)
-    expect(() => parseExecutionHistory({
+    }).client.history(conversationId)).rejects.toThrow(/invalid conversation history response/)
+    await expect(clientReturning({
       ...descriptor,
       entries: Array.from({ length: 201 }, () => ({ kind: 'input', text: 'x' })),
-    })).toThrow(/invalid conversation history response/)
+    }).client.history(conversationId)).rejects.toThrow(/invalid conversation history response/)
   })
 })
