@@ -11,9 +11,8 @@ const testControlNames = [
   'indexPauseAfterCommittedBatch',
   'indexFailBeforeChunk',
 ] as const
-const ORIGIN = process.env.PLAYWRIGHT_TEST_BASE_URL ?? 'http://127.0.0.1:4173'
-
-test('production cannot activate validation-only controls', async ({ page }) => {
+test('production cannot activate validation-only controls', async ({ page, baseURL }) => {
+  const origin = new URL(baseURL ?? 'http://127.0.0.1:4173').origin
   const consoleErrors: string[] = []
   const offOriginRequests: string[] = []
   page.on('console', (message) => {
@@ -22,8 +21,8 @@ test('production cannot activate validation-only controls', async ({ page }) => 
   // Book covers are rendered from same-origin blob URLs, which never leave the
   // browser. Only a genuinely non-origin destination counts as an escape.
   const isLocal = (url: string) =>
-    url.startsWith(ORIGIN) ||
-    url.startsWith(`blob:${ORIGIN}`) ||
+    url.startsWith(origin) ||
+    url.startsWith(`blob:${origin}`) ||
     url.startsWith('data:')
   page.on('request', (request) => {
     if (!isLocal(request.url())) offOriginRequests.push(request.url())

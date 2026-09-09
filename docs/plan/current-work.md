@@ -2,7 +2,42 @@
 
 Documentation triage updated: 2026-09-05.
 
-## Current checkpoint: main merged, cleanup complete (2026-09-08)
+## Current checkpoint: published Agent Connect SDK 0.0.4 (2026-09-09)
+
+Bookhand now consumes exact public `@open-agent-connect/web@0.0.4` from npm,
+replacing the approved-but-local `0.0.3-e3fa090` tarball. The public tarball's
+SHA-256 is `ec4bd3711f5003fd6db78a43c4e4a28a3b50f29c9a8fa4d0c34499676d0d58b7`;
+the lockfile pins npm integrity
+`sha512-GgfNQ4Cy9xVY6+634Xwc9b52z3GJi/ZKJwb1Olv7N4cik50v9NT+MSCR5FX8SdXIHy500pQxnp94zKoRbXum9A==`.
+The package verifier checks the registry URL and integrity instead of treating a
+repository tarball as the active artifact. No SDK API adaptation was required;
+Bookhand retains its Web Lock/CAS, epoch-millisecond expiry, generation,
+cancellation, same-book association and no-replay boundaries.
+
+The Artifex plugin endpoint is healthy at the existing provider address
+`https://artifex-box.tail246db1.ts.net/agent-connect`; Bookhand live OAuth/tool
+composition remains the final acceptance step. Do not reinterpret package,
+fixture or public-health checks as that browser evidence.
+
+The installed SDK completed live unauthenticated discovery against that endpoint
+and a phone-width production browser reached the real owner sign-in page through
+Bookhand's Connect flow. No enrollment secret was supplied and no grant/model or
+tool action was created by that pre-auth check. `BOOKHAND_E2E_PORT` now permits
+an isolated local Playwright port when another preserved preview owns `4173`.
+
+Commit-boundary evidence: clean `npm ci`, SDK packaging verification, focused
+connection/persistence/history/Tutor regressions, lint, typecheck, production
+build, bundle and phone-width strict-CSP checks pass. The first broad verify ran
+all of those successfully, then its browser phase was blocked by the preserved
+preview on `4173`. On isolated `4174`, 34 browser tests passed and three failures
+were traced to test-local hard-coded origin assumptions; both affected files now
+derive Playwright's configured base URL and their focused rerun passes. Two
+reproducible existing Pixel 7 layout assertions remain red: compact chrome is
+111px versus the test's `<80px` contract, and Contents renders two matching
+panel/header nodes instead of one. This dependency-only change does not claim or
+hide those unrelated UI defects.
+
+## Previous checkpoint: main merged, cleanup complete (2026-09-08)
 
 Local checkout is on `main` at integration commit
 `ea3b18e31993adbf74e2778f6c30880fddefd055`; clean before this docs-only update.

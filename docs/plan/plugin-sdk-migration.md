@@ -53,6 +53,13 @@ guard and authorized a local branch commit. Candidate superseded provisional
 `94a58b5`, preserved in ignored `artifacts/local-archive/2026-09-08/`.
 No invented export stubs or local SDK rebuild used to simulate delivery.
 
+Publication follow-up, 2026-09-09: Bookhand replaced this byte-proven local
+delivery path with exact public `@open-agent-connect/web@0.0.4`. The registry
+tarball SHA-256 is
+`ec4bd3711f5003fd6db78a43c4e4a28a3b50f29c9a8fa4d0c34499676d0d58b7`, and
+the package lock/verifier pin its npm URL and integrity. Typecheck found no API
+adaptation requirement; all ownership and lifecycle invariants above remain.
+
 Fresh candidate evidence:
 
 - Package exports/hash/unchanged continuation patch check passes.

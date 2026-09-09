@@ -27,7 +27,7 @@ import {
 
 const expected = {
   '@ai-sdk/open-responses': '2.0.39',
-  '@open-agent-connect/web': '0.0.3',
+  '@open-agent-connect/web': '0.0.4',
   ai: '7.0.93',
   'patch-package': '8.0.1',
   zod: '4.4.3',
@@ -50,11 +50,18 @@ if (!sdkPackage.sideEffects?.includes('./dist/zod-jitless.js') ||
   throw new Error('The shared Zod jitless bootstrap or bundler side-effect declaration is missing')
 }
 
+const lockfile = JSON.parse(await readFile(new URL('../package-lock.json', import.meta.url), 'utf8'))
+const lockedSdk = lockfile.packages?.['node_modules/@open-agent-connect/web']
+const expectedSdkResolution = {
+  resolved: 'https://registry.npmjs.org/@open-agent-connect/web/-/web-0.0.4.tgz',
+  integrity: 'sha512-GgfNQ4Cy9xVY6+634Xwc9b52z3GJi/ZKJwb1Olv7N4cik50v9NT+MSCR5FX8SdXIHy500pQxnp94zKoRbXum9A==',
+}
+if (lockedSdk?.resolved !== expectedSdkResolution.resolved ||
+    lockedSdk?.integrity !== expectedSdkResolution.integrity) {
+  throw new Error('The lockfile does not select the reviewed published Web SDK 0.0.4 artifact')
+}
+
 const artifacts = [
-  [
-    '../vendor/open-agent-connect-web-0.0.3-e3fa090.tgz',
-    'ccd489d55189df32654c3e3bf2dc667ee65545d4d0d453f52eff7cbbfb128480',
-  ],
   [
     '../patches/@ai-sdk+open-responses+2.0.39.patch',
     '99f31168f18f59f13cbc0b60ec85c0bdd302213716980ddfbac63e5e1abce571',
@@ -129,4 +136,4 @@ if (checkpoint !== 'response-terminal') {
   throw new Error('The public checkpoint helper did not select a successful terminal response')
 }
 
-console.log('AI SDK packaging verified (approved source e3fa090)')
+console.log('AI SDK packaging verified (published @open-agent-connect/web@0.0.4)')

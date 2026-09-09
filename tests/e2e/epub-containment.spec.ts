@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
-const ORIGIN = process.env.PLAYWRIGHT_TEST_BASE_URL ?? 'http://127.0.0.1:4173'
+const configuredOrigin = (baseURL: string | undefined) =>
+  new URL(baseURL ?? 'http://127.0.0.1:4173').origin
 
 /**
  * Drives the malicious sentinel corpus through the real production build.
@@ -12,11 +13,12 @@ const ORIGIN = process.env.PLAYWRIGHT_TEST_BASE_URL ?? 'http://127.0.0.1:4173'
  * ever completed, and that each was refused by policy rather than by a failure
  * to resolve `bookhand.invalid`, which would prove nothing about a real host.
  */
-test('an imported book cannot script, exfiltrate, or reach the application', async ({ page }) => {
+test('an imported book cannot script, exfiltrate, or reach the application', async ({ page, baseURL }) => {
+  const origin = configuredOrigin(baseURL)
   const offOriginFailures = new Map<string, string>()
   const offOriginResponses: string[] = []
   const isLocal = (url: string) =>
-    url.startsWith(ORIGIN) || url.startsWith(`blob:${ORIGIN}`) || url.startsWith('data:')
+    url.startsWith(origin) || url.startsWith(`blob:${origin}`) || url.startsWith('data:')
 
   page.on('requestfailed', (request) => {
     if (!isLocal(request.url())) {
@@ -53,7 +55,7 @@ test('an imported book cannot script, exfiltrate, or reach the application', asy
   ).toBeUndefined()
 
   // The top-navigation and popup sentinels did not move the reader anywhere.
-  expect(page.url().startsWith(ORIGIN)).toBe(true)
+  expect(page.url().startsWith(origin)).toBe(true)
   expect(page.context().pages()).toHaveLength(1)
 
   // Nothing off-origin ever completed, and every attempt was refused by policy.
@@ -69,11 +71,12 @@ test('an imported book cannot script, exfiltrate, or reach the application', asy
  * the claim "nothing leaves your browser" is a property of the product rather
  * than a description of what happens to be reachable during a demo.
  */
-test('the bundled book reads with every non-origin route severed', async ({ page }) => {
+test('the bundled book reads with every non-origin route severed', async ({ page, baseURL }) => {
+  const origin = configuredOrigin(baseURL)
   await page.route('**', (route) => {
     const url = route.request().url()
     const local =
-      url.startsWith(ORIGIN) || url.startsWith(`blob:${ORIGIN}`) || url.startsWith('data:')
+      url.startsWith(origin) || url.startsWith(`blob:${origin}`) || url.startsWith('data:')
     return local ? route.continue() : route.abort()
   })
 
