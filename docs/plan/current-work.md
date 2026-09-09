@@ -20,6 +20,10 @@ Bookhand flow working through the published SDK and Artifex/OpenClaw, including
 conversation restoration after reload. This closes the live vertical-slice
 acceptance gate. It is owner-observed evidence, distinct from the deterministic
 package and browser checks below, and does not resolve unrelated mobile defects.
+The same acceptance exposed an open
+[restored-conversation presentation defect](../issues/tutor-restored-conversation-presentation.md):
+raw application/tool history overwhelms the reloaded transcript. Record it as a
+future projection/UI fix without weakening restoration or no-replay semantics.
 
 The installed SDK completed live unauthenticated discovery against that endpoint
 and a phone-width production browser reached the real owner sign-in page through
