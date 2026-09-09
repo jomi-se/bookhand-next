@@ -2,7 +2,7 @@
 
 Documentation triage updated: 2026-09-05.
 
-## Current checkpoint: published Agent Connect SDK 0.0.4 (2026-09-09)
+## Current checkpoint: live Agent Connect vertical slice accepted (2026-09-09)
 
 Bookhand now consumes exact public `@open-agent-connect/web@0.0.4` from npm,
 replacing the approved-but-local `0.0.3-e3fa090` tarball. The public tarball's
@@ -15,9 +15,11 @@ Bookhand retains its Web Lock/CAS, epoch-millisecond expiry, generation,
 cancellation, same-book association and no-replay boundaries.
 
 The Artifex plugin endpoint is healthy at the existing provider address
-`https://artifex-box.tail246db1.ts.net/agent-connect`; Bookhand live OAuth/tool
-composition remains the final acceptance step. Do not reinterpret package,
-fixture or public-health checks as that browser evidence.
+`https://artifex-box.tail246db1.ts.net/agent-connect`. Jose now reports the real
+Bookhand flow working through the published SDK and Artifex/OpenClaw, including
+conversation restoration after reload. This closes the live vertical-slice
+acceptance gate. It is owner-observed evidence, distinct from the deterministic
+package and browser checks below, and does not resolve unrelated mobile defects.
 
 The installed SDK completed live unauthenticated discovery against that endpoint
 and a phone-width production browser reached the real owner sign-in page through
