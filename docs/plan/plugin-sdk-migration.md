@@ -2,8 +2,8 @@
 
 Branch: `work/bookhand-plugin-sdk`, based on local main `11f04cc`. Root/Jose
 authorized bounded implementation; no live cutover, services, auth, consent,
-Serve, merge or push. Preserve main and unrelated work. Source plan:
-`/home/dev/agent-connect/docs/plan/plugin-sdk-bookhand-migration.md`.
+Serve, merge or push. Preserve main and unrelated work. Source plan: Agent
+Connect's `docs/plan/plugin-sdk-bookhand-migration.md`.
 
 ## Settled ownership
 

@@ -997,6 +997,22 @@ describe('TutorConversation through the real AI SDK stream/tool loop', () => {
     expect(JSON.stringify(deep)).not.toMatch(/one|two|three|four/)
   })
 
+  it('surfaces sanitized Agent Connect authentication failures', () => {
+    const diagnostic = diagnoseTutorFailure({
+      code: 'agent_authentication_failed',
+      message: 'private provider detail',
+      data: { credential: 'secret' },
+    })
+    expect(diagnostic).toEqual({
+      name: 'UnknownError',
+      category: 'provider',
+      code: 'agent_authentication_failed',
+      message:
+        'The user-owned agent cannot authenticate with its configured model provider.',
+    })
+    expect(JSON.stringify(diagnostic)).not.toMatch(/private provider detail|secret/)
+  })
+
   it('retires book tools before accepting a pending late result', async () => {
     let finishTool!: () => void
     const toolBarrier = new Promise<void>((resolve) => {

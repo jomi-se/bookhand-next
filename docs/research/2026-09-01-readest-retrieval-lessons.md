@@ -2,7 +2,7 @@
 
 Observed: 2026-09-01
 
-Local source snapshot: `/home/dev/readest` at `180795fb4`
+Source snapshot: Readest at commit `180795fb4`
 
 ## Why inspect it
 

@@ -10,6 +10,8 @@ export interface TutorFailureDiagnostic {
   readonly category: TutorFailureCategory
   readonly code:
     | 'response_processing_failed'
+    | 'agent_authentication_failed'
+    | 'agent_execution_failed'
     | 'provider_request_failed'
     | 'tool_failed'
     | 'interrupted'
@@ -35,6 +37,12 @@ export function diagnoseTutorFailure(
 }
 
 export function tutorFailureMessage(diagnostic: TutorFailureDiagnostic): string {
+  if (diagnostic.code === 'agent_authentication_failed') {
+    return 'Your agent cannot authenticate with its model provider. Ask the agent operator to repair provider authentication, then start a new conversation.'
+  }
+  if (diagnostic.code === 'agent_execution_failed') {
+    return 'Your agent failed while processing this response. Ask the agent operator to inspect it, then start a new conversation.'
+  }
   switch (diagnostic.category) {
     case 'response-processing':
       return 'The AI provider returned a response Bookhand could not read. Start a new conversation before trying again.'
@@ -80,6 +88,25 @@ function diagnose(
   const rawName = readString(failure, 'name')
   const name = allowedName(rawName)
   const status = name === 'APICallError' ? readStatus(failure) : undefined
+  const agentConnectCode = readString(failure, 'code')
+  if (agentConnectCode === 'agent_authentication_failed') {
+    return staticDiagnostic(
+      name,
+      'provider',
+      agentConnectCode,
+      'The user-owned agent cannot authenticate with its configured model provider.',
+      status,
+    )
+  }
+  if (agentConnectCode === 'agent_execution_failed') {
+    return staticDiagnostic(
+      name,
+      'provider',
+      agentConnectCode,
+      'The user-owned agent failed while processing the response.',
+      status,
+    )
+  }
   const category = classify(name, status, context)
   const base = classification(name, category, status)
   const cause = readCause(failure)

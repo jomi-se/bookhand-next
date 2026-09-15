@@ -1,7 +1,7 @@
 # Minimal last-conversation restore
 
-Requested by Jose through Agent Connect, 2026-09-08. Backend oracle:
-`agent-connect-openclaw/docs/architecture/scoped-conversation-history.md`,
+Requested through Agent Connect, 2026-09-08. Backend oracle:
+Agent Connect's `docs/architecture/scoped-conversation-history.md`,
 97c69d6. Only automatic same-book restore on Tutor opening/reload; no picker,
 search, pagination, transcript database, tool replay or automatic prompt resend.
 
@@ -117,7 +117,7 @@ scope preservation through synthetic refresh/reload, duplicated-tab contention,
 New-conversation late-finalization rejection and denied clear preventing send.
 These are deterministic fixtures, not real subscription/browser history evidence.
 After the final truncation-copy correction, parent core/panel regression and
-production build passed again. The served :8445 asset matches local
+production build passed again. The served preview asset matches local
 index-DiXsiEfF.js (SHA-256
 80dc4f9a56bbc44cee368684d4a237d3da6dd1d5738eec86f8e32fde62615516).
 No model requests, live history reads, user mutations, service changes or pushes.

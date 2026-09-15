@@ -1,22 +1,31 @@
 # Current work
 
-Documentation triage updated: 2026-09-05.
+Documentation triage updated: 2026-09-14.
 
-## Current checkpoint: live Agent Connect vertical slice accepted (2026-09-09)
+## Pending: infer the connection experience from the provider address
 
-Bookhand now consumes exact public `@open-agent-connect/web@0.0.4` from npm,
-replacing the approved-but-local `0.0.3-e3fa090` tarball. The public tarball's
-SHA-256 is `ec4bd3711f5003fd6db78a43c4e4a28a3b50f29c9a8fa4d0c34499676d0d58b7`;
-the lockfile pins npm integrity
-`sha512-GgfNQ4Cy9xVY6+634Xwc9b52z3GJi/ZKJwb1Olv7N4cik50v9NT+MSCR5FX8SdXIHy500pQxnp94zKoRbXum9A==`.
-The package verifier checks the registry URL and integrity instead of treating a
-repository tarball as the active artifact. No SDK API adaptation was required;
+Remove the manual Tailscale-versus-HTTPS selector from the Tutor connection
+form. Once the person enters a valid provider address, select the `tailscale`
+experience for a canonical `*.ts.net` hostname and `https` otherwise. Recompute
+the suggestion when the address changes, while preserving an already-authorized
+connection's saved experience until the person deliberately replaces it.
+
+This is presentation and owner-login guidance only. A `.ts.net` suffix does not
+prove Tailscale Serve rather than Funnel, endpoint ownership, tailnet membership,
+or requester identity. Bookhand must not add identity headers or treat this URL
+classification as authorization; the gateway and its deployment remain
+responsible for every security check.
+
+## Current checkpoint: live Agent Connect vertical slice accepted (2026-09-15)
+
+Bookhand now consumes the reviewed vendored
+`@open-agent-connect/web@0.0.5` release candidate. The package verifier checks
+its exact integrity until that version is published. No SDK API adaptation was required;
 Bookhand retains its Web Lock/CAS, epoch-millisecond expiry, generation,
 cancellation, same-book association and no-replay boundaries.
 
-The Artifex plugin endpoint is healthy at the existing provider address
-`https://artifex-box.tail246db1.ts.net/agent-connect`. Jose now reports the real
-Bookhand flow working through the published SDK and Artifex/OpenClaw, including
+The owner-operated plugin endpoint is healthy. The owner reports the real
+Bookhand flow working through the reviewed SDK candidate and OpenClaw, including
 conversation restoration after reload. This closes the live vertical-slice
 acceptance gate. It is owner-observed evidence, distinct from the deterministic
 package and browser checks below, and does not resolve unrelated mobile defects.
@@ -61,14 +70,14 @@ the intact-content/no-data-loss assertion is root's cleanup report, not a new
 file-by-file audit. Do not treat the archive as an active Git worktree.
 
 Root reports origin remains `bookhand-next` and the judged original is unchanged.
-Live OpenClaw was relocated: plugin health passes at the same provider URL
-`https://artifex-box.tail246db1.ts.net/agent-connect`, grants preserved, but old
+Live OpenClaw was relocated: plugin health passes at the owner-operated provider
+URL, grants preserved, but old
 conversation heads were reset by the restart. This is upstream runtime evidence;
 no health/auth/model call was made for this ledger update. Retained authorization
 does not imply old conversations can continue; use the existing unavailable-head
 handling and explicit fresh conversation, never replay prior prompts or tools.
 
-Previously verified Bookhand `:8445` serves byte-identical `ea3b18e` assets with
+Previously verified Bookhand preview serves byte-identical `ea3b18e` assets with
 strict CSP. Known search/navigation/timeout defects and owner-evidence limits
 remain unchanged. This update runs no tests, changes no services and pushes
 nothing; only the current-work ledger is committed.
@@ -76,8 +85,8 @@ nothing; only the current-work ledger is committed.
 ## Historical: plugin SDK migration approved for local commit (2026-09-08)
 
 Agent Connect root authorized bounded consumer decoupling, not live cutover.
-Checkout inspected clean on `main` at `11f04cc`. Upstream plan:
-`/home/dev/agent-connect/docs/plan/plugin-sdk-bookhand-migration.md`, following
+Checkout inspected clean on `main` at `11f04cc`. Upstream plan: Agent Connect's
+`docs/plan/plugin-sdk-bookhand-migration.md`, following
 plugin-host `1b8b67a`. Root approved exact SDK signatures; source migration is
 complete against approved SDK source `e3fa090809e1197dac4a7347a6f48c78240bef44`,
 with byte-identical hash `ccd489d…` to the tested candidate. Root reports real
@@ -165,7 +174,7 @@ and late history after disposal covered. Final UI truncation copy says some
 history was omitted, without claiming which messages were clipped. Parent final
 core/panel regression and rebuilt production artifact both passed.
 
-Read-only HTTPS fetch verifies :8445 serves the byte-identical local asset
+Read-only HTTPS fetch verifies the preview serves the byte-identical local asset
 index-DiXsiEfF.js, SHA-256
 80dc4f9a56bbc44cee368684d4a237d3da6dd1d5738eec86f8e32fde62615516.
 No owner browser reload, live model/tool replay, proxy restart, service/Serve
@@ -185,7 +194,7 @@ runtime validation, call shapes and consent binding are unchanged.
 
 Focused tool/library/connection tests, example validation through the installed
 SDK, focused lint, diff whitespace check and production build passed. Read-only
-HTTPS verification on :8445 serves index-khtm_nof.js matching the local asset:
+HTTPS verification serves index-khtm_nof.js matching the local asset:
 SHA-256 59ec59bfd55f64503fb90da79e660009d0c715f0b6a8a4a8417e8a641faa8574.
 This is served-artifact evidence, not a live model smoke. Descriptions participate
 in exact approved catalog equality, so existing Tutor grants need fresh consent;
@@ -258,7 +267,7 @@ warnings. No raw logging/persistence/export or replay changes. Focused Tutor
 tests: 22 passed, including one error-result tool followed by HTTP 200 body-read
 failure, nested TypeError identity, secret exclusion and no replay. This fixture
 does not prove a successful mutation; the owner accepted that bounded evidence.
-Production build passed and read-only HTTPS fetch confirmed `:8445` serves the
+Production build passed and read-only HTTPS fetch confirmed the preview serves the
 byte-identical local asset `index-CbI9_QXO.js`, SHA-256
 `bd728bcfefd931878239621e4026c4256145f82a5dfd16a9a01a1bb3368bf782`.
 No browser reload, consent, live tool invocation or service changes were made.
@@ -285,8 +294,8 @@ controls visible, no horizontal overflow, strict CSP and no console/page errors.
 Screenshots: ignored `artifacts/tutor-disconnected-smoke-20260906/`.
 Broad unit run: 514 passed, one failed: the reader-Foliate Section 23 workload
 deadline measured 18.14s against a 15s bound. Broad-suite success is not claimed
-and baseline causality has not been established. Full log:
-`/tmp/bookhand-command-logs/quiet-run.ZsvzyC.log`.
+and baseline causality has not been established. The bounded command log was
+retained outside the repository for that development session.
 The same workload test passed on a focused isolated rerun; this suggests load
 sensitivity but does not establish the cause or turn the broad run green.
 The live native-auth,
@@ -294,18 +303,10 @@ source-linked Study hero remains unproven pending upstream runtime readiness.
 
 ## Previous checkpoint: separate-gateway Tutor demo preparation
 
-This existing checkout is now on `work/openclaw-tutor-demo`, starting at
-`2c36f33`; pending Tutor implementation and unrelated edits remain intact.
-`main` has not moved. The runtime-neutral integration is the intended real
-Agent Connect demo instead of Canvas. Scope, reviewed acceptance, intent-only
-prompts and current evidence are in
-[`openclaw-tutor-demo.md`](openclaw-tutor-demo.md).
-
-No SDK API change is currently required. Actual subscription-backed testing is
-blocked on the Agent Connect instance supplying an isolated runtime/card after
-José selects its execution loop. Do not reuse the old personal gateway/card or
-restart `agc`. No push, public deployment, credentials, or CSP changes authorized;
-ordinary local Bookhand preview rebuild/restart is allowed.
+The runtime-neutral integration is the intended real Agent Connect demo instead
+of Canvas. The superseded replacement-gateway runbook was removed because it
+mixed public product history with operator-specific deployment details. No SDK
+API change is currently required.
 
 ## Development-fork handoff
 
@@ -316,7 +317,7 @@ removed at the user's request. Code inspection found fixes for the main reports;
 no remaining runtime defect was confirmed during this documentation pass. Track
 fresh reproductions if problems recur rather than revive speculative backlog.
 
-Standalone EPUB restoration work lives in `/home/dev/epub-remaster`. This checkout
+Standalone EPUB restoration work lives in its own repository. This checkout
 tracks `bookhand-next`; leave the judged Bookhand repository and deployment
 unchanged. Agent Connect integration is now authorized under ADR 0006; current
 scope, validation requirements and progress live in
@@ -500,7 +501,7 @@ demonstration; W7 through W11 remain recorded rather than discarded.
 
 The WebMCP Challenge closes 2026-09-03T20:00Z.
 
-- Live surface: https://bookhand.jomi-se.workers.dev/
+- Live surface: https://bookhand.dev/
 - ADR 0005 replaces Foliate's blocked per-section `blob:` iframe navigation
   with one persistent same-origin frame. Focused production tests prove frame
   identity across Chapter X to XI to X, offline navigation, remaster reload,

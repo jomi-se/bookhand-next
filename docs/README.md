@@ -12,7 +12,9 @@ Documentation is organized by authority rather than chronology:
 - `plan/connect-your-ai-bookhand.md` tracks the native OpenClaw OAuth/AI SDK integration.
 - `plan/ai-connection-persistence.md` and `plan/tutor-last-conversation.md` define its scoped persistence and restore boundaries.
 - `plan/bookhand-merge-readiness.md` records integration commit ownership, checks and merge authorization.
-- `plan/agent-connect-tutor.md` and `plan/openclaw-tutor-demo.md` preserve superseded runtime-card prototype evidence, not current onboarding instructions.
+- `plan/agent-connect-tutor.md` preserves the application-facing Tutor contract;
+  superseded operator-specific deployment evidence is intentionally not retained
+  in this public repository.
 - `contracts/` contains falsifiable validation targets for active slices.
 - `research/` contains dated external findings and source links.
 - `reviews/` contains dated design and implementation reviews.

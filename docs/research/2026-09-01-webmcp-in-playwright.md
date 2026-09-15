@@ -1,7 +1,7 @@
 # Driving the real WebMCP runtime from Playwright
 
-Recorded 2026-09-01, on this VM (Linux ARM64), against Chromium 151 and Chrome
-for Testing 153. Written so any harness on this machine — Claude Code, Codex,
+Recorded 2026-09-01 on Linux ARM64, against Chromium 151 and Chrome
+for Testing 153. Written so any local development harness — Claude Code, Codex,
 or a bare script — can exercise the agent path without a stand-in.
 
 ## The short version
@@ -17,7 +17,7 @@ and `document.modelContext` is there, with `registerTool`, `getTools`,
 
 No Chrome install, no `sudo`, no system Chromium, no ARM64 problem. It works
 with `chromium.launch()`'s default executable, so it is portable rather than
-tied to this machine.
+coupled to one development environment.
 
 ## How the flag name was found
 
@@ -26,9 +26,9 @@ Dump the binary's strings and look for the id, then for the `k`-prefixed
 symbol near it:
 
 ```sh
-strings -a "$(node -e "import('@playwright/test').then(m=>console.log(m.chromium.executablePath()))")" > /tmp/chrome.strings
-grep -n "webmcp" /tmp/chrome.strings          # -> enable-webmcp-testing, devtools-webmcp-support
-grep -n "kWebMCPTesting\|WebMCPTesting" /tmp/chrome.strings
+strings -a "$(node -e "import('@playwright/test').then(m=>console.log(m.chromium.executablePath()))")" > chrome.strings
+grep -n "webmcp" chrome.strings          # -> enable-webmcp-testing, devtools-webmcp-support
+grep -n "kWebMCPTesting\|WebMCPTesting" chrome.strings
 ```
 
 The flag id is `enable-webmcp-testing` (what `chrome://flags` shows); the

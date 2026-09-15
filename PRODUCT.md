@@ -87,7 +87,7 @@ artifacts that remain visibly attached to their sources and under user control.
 ## Evidence on Hand
 
 - The deployed proof of concept is available at
-  `https://bookhand.jomi-se.workers.dev/` during the judging period.
+  `https://bookhand.dev/` during the judging period.
 - `public/books/calculus-made-easy.epub` provides real technical-book content,
   inline mathematical alternatives, figures, and the Chapter X hero source.
 - `tests/fixtures/epub/` contains deterministic, malformed, and malicious EPUB

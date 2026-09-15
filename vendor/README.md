@@ -1,21 +1,22 @@
 # Agent Connect SDK provenance
 
-## Current dependency — published 0.0.4
+## Current dependency — reviewed 0.0.5 release candidate
 
-Bookhand now installs exact `@open-agent-connect/web@0.0.4` from the public npm
-registry rather than from this directory. The reviewed registry tarball has
-SHA-256 `ec4bd3711f5003fd6db78a43c4e4a28a3b50f29c9a8fa4d0c34499676d0d58b7`
-and npm integrity
-`sha512-GgfNQ4Cy9xVY6+634Xwc9b52z3GJi/ZKJwb1Olv7N4cik50v9NT+MSCR5FX8SdXIHy500pQxnp94zKoRbXum9A==`.
-`scripts/verify-ai-sdk-packaging.mjs` checks the installed version and exact
-lockfile resolution/integrity. The files retained below are historical inputs,
-not installed dependencies.
+Bookhand installs exact `@open-agent-connect/web@0.0.5` from
+`open-agent-connect-web-0.0.5.tgz` while the release candidate is evaluated.
+Its SHA-256 is
+`e95cec87f8c3581038f4d7a0c19eda1a37f201fc1634d703a192f440292a02d4`
+and npm integrity is
+`sha512-vMVLV0cxZ3RM1GQPbfMlDUwqJerq/w/pEP8kzSo6wYMSIi/ORU/0BRgI0sb61wBbdNh6xzFdju6Elzf9IRVNLw==`.
+`scripts/verify-ai-sdk-packaging.mjs` checks the installed version, lockfile and
+artifact digest. Return to the exact registry artifact after publication. The
+older files retained below are historical inputs, not installed dependencies.
 
 ## Historical approved plugin SDK — e3fa090
 
 The former migration branch pointed package.json to
-`open-agent-connect-web-0.0.3-e3fa090.tgz`, supplied by Agent Connect
-root from `/home/dev/agent-connect/dist/open-agent-connect-web-0.0.3.tgz`.
+`open-agent-connect-web-0.0.3-e3fa090.tgz`, supplied from the Agent Connect
+release build.
 SHA-256: `ccd489d55189df32654c3e3bf2dc667ee65545d4d0d453f52eff7cbbfb128480`.
 Approved source: `e3fa090809e1197dac4a7347a6f48c78240bef44`. Root reports completed
 SDK review, SDK tests/typecheck/build/external package smoke, and real installed
@@ -31,9 +32,8 @@ Historical reviewed baseline below remains available.
 ## Historical baseline — 3cc49ec (not the active dependency)
 
 `open-agent-connect-web-0.0.3-3cc49ec.tgz` is the local Agent Connect SDK build
-supplied by its implementation instance, from commit
-`3cc49ec32981553faa01729e0e2cee6cdea39dd4` in
-`/home/dev/agent-connect-openclaw`. Its package version remains 0.0.3; this is
+supplied by its implementation instance at commit
+`3cc49ec32981553faa01729e0e2cee6cdea39dd4`. Its package version remains 0.0.3; this is
 **not** the unmodified npm 0.0.3 artifact. The filename and lockfile preserve
 that distinction. Its SHA-256 is
 `57d38dad6d57fc82786faa8a684e342814d75a0e9bafdaff1d1d7827a5f90a80`.
@@ -66,7 +66,7 @@ npm run build
 npm run verify:csp
 ```
 
-This temporary dependency was replaced by the reviewed public 0.0.4 package on
+This earlier temporary dependency was replaced by the reviewed public 0.0.4 package on
 2026-09-09. Do not publish a patched SDK from this repository.
 
 The earlier tracked cf3b3d1 tarball is retained as historical material, not the

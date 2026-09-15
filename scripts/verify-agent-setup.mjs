@@ -39,10 +39,9 @@ for (const path of [
 }
 
 for (const path of [".mcp.json", ".codex/config.toml", "AGENTS.md", "CLAUDE.md"]) {
-  if ((await read(path)).includes("/home/dev/agent-connect")) {
-    throw new Error(`${path} contains an Agent Connect absolute path`);
+  if (/\/(?:home|Users)\/[^/]+\/agent-connect(?:\/|\b)/.test(await read(path))) {
+    throw new Error(`${path} contains a machine-specific Agent Connect path`);
   }
 }
 
 console.log("agent setup verified");
-

@@ -1,7 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  // Static-site deployment on Cloudflare Workers, matching the jomi-se-blog
-  // setup on this machine: `npm run build` produces ./dist and
+  // Static-site deployment on Cloudflare Workers: `npm run build` produces ./dist and
   // `npx wrangler deploy` uploads it as static assets. No Worker script
   // ("main") is needed, and bookhand.dev is attached as a custom domain from
   // the Cloudflare dashboard rather than declared here.

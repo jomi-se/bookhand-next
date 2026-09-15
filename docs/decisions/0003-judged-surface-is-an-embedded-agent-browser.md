@@ -67,10 +67,10 @@ it is the judged geometry.
 current imperative API and ChatGPT's browser both use, and falls back to
 `navigator.modelContext`, the shape Chrome's 146 preview exposed.
 
-### The real runtime does run on this VM
+### The real runtime is available in Playwright Chromium
 
 An earlier draft of this amendment said real-runtime verification was
-impossible here, because Google ships no stable Chrome for Linux ARM64 and
+impossible in the development environment, because Google ships no stable Chrome for Linux ARM64 and
 `--enable-features` appeared not to reach WebMCP. That was a wrong feature name,
 not a missing capability. The switch behind
 `chrome://flags/#enable-webmcp-testing` is `WebMCPTesting`, and launching

@@ -148,7 +148,7 @@ live gateways/credentials/Serve, or weaken CSP.
 
 ## New authority, not an old demo repair
 
-Read in `/home/dev/agent-connect-openclaw`:
+Read in the Agent Connect source checkout:
 
 - `docs/plan/connect-your-ai-openclaw.md`
 - `docs/decisions/0013-native-provider-delegation-and-ai-sdk.md`

@@ -7,10 +7,10 @@ instead of 404ing. There is no Worker script, so no `main` entry.
 
 ## How deploys happen: Cloudflare pulls
 
-Deployment uses **Cloudflare Workers Builds**, the same pull model as
-`jomi-se-blog` on this machine. The repository is connected once from the
-Cloudflare dashboard through Cloudflare's GitHub App; from then on every push to
-`main` makes Cloudflare clone the repo, run the build, and deploy the result.
+Deployment uses **Cloudflare Workers Builds**. The repository is connected once
+from the Cloudflare dashboard through Cloudflare's GitHub App; from then on every
+push to `main` makes Cloudflare clone the repo, run the build, and deploy the
+result.
 
 Dashboard settings for the `bookhand` Worker:
 
@@ -28,9 +28,7 @@ A GitHub Action that deploys would need a Cloudflare API token stored as a
 repository secret. Cloudflare's own git integration needs no credential inside
 this repository at all: the trust flows the other way, from the dashboard to
 GitHub. That keeps the token out of the repo, out of CI logs, and out of reach
-of anything an agent or imported book content could influence. The blog is set
-up this way for the same reason; its only workflow builds and sanity-checks the
-output, and never deploys.
+of anything an agent or imported book content could influence.
 
 `npm run deploy` and `npm run deploy:dry` remain as a manual escape hatch for the
 owner from an authenticated machine. They are not the normal path, and nothing

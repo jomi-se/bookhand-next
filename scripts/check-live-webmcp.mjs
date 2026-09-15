@@ -12,7 +12,7 @@
  */
 import { chromium } from '@playwright/test'
 
-const url = process.argv[2] ?? 'https://bookhand.jomi-se.workers.dev/'
+const url = process.argv[2] ?? 'https://bookhand.dev/'
 
 const browser = await chromium.launch({ args: ['--enable-features=WebMCPTesting'] })
 let failed = false

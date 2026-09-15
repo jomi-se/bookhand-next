@@ -124,7 +124,7 @@ draft/attachment capture, continuation without transcript replay, owned callback
 success/denial, invalid grants, disconnect/revocation failures and late connection
 completion. Browser evidence so far: actual EPUB paragraph -> Ask tutor -> draft
 -> Study -> Tutor preserves captured context; 412px has no horizontal overflow.
-Screenshots: `/tmp/bookhand-tutor-selected-phone.png` and related tutor captures.
+Screenshots were retained outside the repository for the development session.
 Physical Pixel 7 keyboard behavior and real agent flow are not yet proven.
 
 ## Handoff: implementation ready for owner approval
@@ -140,10 +140,10 @@ Validated locally:
 - Focused Tutor unit/component tests plus existing WebMCP handler and reader
   adapter regressions, TypeScript/build and lint. These include a scripted SDK
   provider and are **not** evidence of model-authored teaching.
-- Actual built preview at `https://artifex-box.tail246db1.ts.net:8445`: EPUB
+- Actual tailnet-private built preview: EPUB
   selection, captured quote, compose, Study switch and return preserve context.
 - Real SDK signed gateway challenge and authorization request succeed against
-  the private gateway on port 8443; all offered tool schemas reach the actual
+  a private gateway; all offered tool schemas reach the actual
   consent screen under the strict no-eval policy.
 - **Deny**, through that real consent screen, returns to Calculus Made Easy,
   with one EPUB iframe still mounted and a visible authorization-denied error.
@@ -177,8 +177,8 @@ passage -> explanation -> source-linked Study artifact -> contextual follow-up
 Actual Pixel 7 keyboard/lifecycle validation also remains pending. Do not reuse
 judge credentials, publish the patched SDK, push or deploy without permission.
 
-To continue: use the private preview, open a book, select a passage and Ask tutor.
-Use the public runtime card in `/tmp/bookhand-agent-connect-runtime-card.json`.
+To continue: use a private preview, open a book, select a passage and Ask tutor.
+Use the public runtime card supplied by the gateway operator.
 Approve in the same browser's normal gateway flow; callback returns to that book
 and never auto-sends. Ask for a useful saved example, then a follow-up referring
 to the explanation without restating it. Record artifact identity and reload.

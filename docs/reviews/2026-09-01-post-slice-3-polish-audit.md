@@ -2,7 +2,7 @@
 
 Date: 2026-09-01  
 Commit reviewed: `f286910`  
-Live surface reviewed: `https://bookhand.jomi-se.workers.dev/`
+Live surface reviewed: `https://bookhand.dev/`
 
 ## Executive judgment
 
@@ -224,4 +224,3 @@ control, and persistence in one legible scene.
 4. **Evidence reset:** keep current-work and scope inventory truthful; validate
    repeated full-suite stability and preserve screenshots/traces for the actual
    judged desktop embedded-browser flow.
-
