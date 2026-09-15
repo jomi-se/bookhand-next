@@ -53,22 +53,18 @@ if (!sdkPackage.sideEffects?.includes('./dist/zod-jitless.js') ||
 const lockfile = JSON.parse(await readFile(new URL('../package-lock.json', import.meta.url), 'utf8'))
 const lockedSdk = lockfile.packages?.['node_modules/@open-agent-connect/web']
 const expectedSdkResolution = {
-  resolved: 'file:vendor/open-agent-connect-web-0.0.5.tgz',
-  integrity: 'sha512-vMVLV0cxZ3RM1GQPbfMlDUwqJerq/w/pEP8kzSo6wYMSIi/ORU/0BRgI0sb61wBbdNh6xzFdju6Elzf9IRVNLw==',
+  resolved: 'https://registry.npmjs.org/@open-agent-connect/web/-/web-0.0.5.tgz',
+  integrity: 'sha512-CeVflg552UJgRG6f3nyAtPKI0lKXDvVq40H6GbQLC6C2gT2Kq8STyGg8LQcHXRIzmhyoRZ7XH95sugoAjKkV/w==',
 }
 if (lockedSdk?.resolved !== expectedSdkResolution.resolved ||
     lockedSdk?.integrity !== expectedSdkResolution.integrity) {
-  throw new Error('The lockfile does not select the reviewed vendored Web SDK 0.0.5 candidate')
+  throw new Error('The lockfile does not select the reviewed published Web SDK 0.0.5 artifact')
 }
 
 const artifacts = [
   [
     '../patches/@ai-sdk+open-responses+2.0.39.patch',
     '99f31168f18f59f13cbc0b60ec85c0bdd302213716980ddfbac63e5e1abce571',
-  ],
-  [
-    '../vendor/open-agent-connect-web-0.0.5.tgz',
-    'e95cec87f8c3581038f4d7a0c19eda1a37f201fc1634d703a192f440292a02d4',
   ],
 ]
 
@@ -140,4 +136,4 @@ if (checkpoint !== 'response-terminal') {
   throw new Error('The public checkpoint helper did not select a successful terminal response')
 }
 
-console.log('AI SDK packaging verified (vendored @open-agent-connect/web@0.0.5 candidate)')
+console.log('AI SDK packaging verified (published @open-agent-connect/web@0.0.5)')

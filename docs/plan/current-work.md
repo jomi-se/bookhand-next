@@ -18,14 +18,14 @@ responsible for every security check.
 
 ## Current checkpoint: live Agent Connect vertical slice accepted (2026-09-15)
 
-Bookhand now consumes the reviewed vendored
-`@open-agent-connect/web@0.0.5` release candidate. The package verifier checks
-its exact integrity until that version is published. No SDK API adaptation was required;
+Bookhand now consumes exact published `@open-agent-connect/web@0.0.5` from the
+public npm registry. The package verifier checks its exact registry resolution
+and integrity. No SDK API adaptation was required;
 Bookhand retains its Web Lock/CAS, epoch-millisecond expiry, generation,
 cancellation, same-book association and no-replay boundaries.
 
 The owner-operated plugin endpoint is healthy. The owner reports the real
-Bookhand flow working through the reviewed SDK candidate and OpenClaw, including
+Bookhand flow working through the published SDK and OpenClaw, including
 conversation restoration after reload. This closes the live vertical-slice
 acceptance gate. It is owner-observed evidence, distinct from the deterministic
 package and browser checks below, and does not resolve unrelated mobile defects.

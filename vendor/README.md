@@ -1,16 +1,13 @@
 # Agent Connect SDK provenance
 
-## Current dependency — reviewed 0.0.5 release candidate
+## Current dependency — published 0.0.5
 
-Bookhand installs exact `@open-agent-connect/web@0.0.5` from
-`open-agent-connect-web-0.0.5.tgz` while the release candidate is evaluated.
-Its SHA-256 is
-`e95cec87f8c3581038f4d7a0c19eda1a37f201fc1634d703a192f440292a02d4`
-and npm integrity is
-`sha512-vMVLV0cxZ3RM1GQPbfMlDUwqJerq/w/pEP8kzSo6wYMSIi/ORU/0BRgI0sb61wBbdNh6xzFdju6Elzf9IRVNLw==`.
-`scripts/verify-ai-sdk-packaging.mjs` checks the installed version, lockfile and
-artifact digest. Return to the exact registry artifact after publication. The
-older files retained below are historical inputs, not installed dependencies.
+Bookhand installs exact `@open-agent-connect/web@0.0.5` from the public npm
+registry. Its npm integrity is
+`sha512-CeVflg552UJgRG6f3nyAtPKI0lKXDvVq40H6GbQLC6C2gT2Kq8STyGg8LQcHXRIzmhyoRZ7XH95sugoAjKkV/w==`.
+`scripts/verify-ai-sdk-packaging.mjs` checks the installed version and exact
+lockfile registry artifact. The older files retained below are historical
+inputs, not installed dependencies.
 
 ## Historical approved plugin SDK — e3fa090
 
@@ -66,8 +63,8 @@ npm run build
 npm run verify:csp
 ```
 
-This earlier temporary dependency was replaced by the reviewed public 0.0.4 package on
-2026-09-09. Do not publish a patched SDK from this repository.
+This earlier temporary dependency was replaced by public 0.0.4 on 2026-09-09
+and later by public 0.0.5. Do not publish a patched SDK from this repository.
 
 The earlier tracked cf3b3d1 tarball is retained as historical material, not the
 installed dependency. The unused 9736495 tarball was preserved in the ignored
