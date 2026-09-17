@@ -55,6 +55,9 @@ The evidence narrative and exact history landmarks remain in
 The accepted Bookhand contracts remain authoritative until a separately
 approved planning pass changes them.
 
+Prioritized future choices and the three-candidate selection workflow live in
+the [reader-engine candidate backlog](../../plan/reader-engine-candidate-backlog.md).
+
 ## Shared Bookhand constraints
 
 Every future reader-engine change must preserve:

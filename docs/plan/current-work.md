@@ -65,6 +65,13 @@ capability coverage inventory, compatibility-spike checklist, and owner-fork
 update gate. This is research and specification only: no renderer approach,
 dependency, implementation task, or validation contract was adopted here.
 
+The [reader-engine candidate backlog](reader-engine-candidate-backlog.md)
+classifies the findings into prerequisite, correctness, capability, deferred,
+and rejected work. It also defines the owner-selection loop: present three
+eligible candidates, plan the chosen one in detail, use bounded clean-context
+Luna implementation lanes, then integrate and validate centrally. No candidate
+has been selected or started.
+
 ## Previous checkpoint: main merged, cleanup complete (2026-09-08)
 
 Local checkout is on `main` at integration commit
