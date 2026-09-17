@@ -47,10 +47,18 @@ all of those successfully, then its browser phase was blocked by the preserved
 preview on `4173`. On isolated `4174`, 34 browser tests passed and three failures
 were traced to test-local hard-coded origin assumptions; both affected files now
 derive Playwright's configured base URL and their focused rerun passes. Two
-reproducible existing Pixel 7 layout assertions remain red: compact chrome is
-111px versus the test's `<80px` contract, and Contents renders two matching
-panel/header nodes instead of one. This dependency-only change does not claim or
-hide those unrelated UI defects.
+reproducible Pixel 7 failures recorded at that checkpoint were repaired on
+2026-09-17. Tutor CSS had globally changed the compact reader toolbar into a
+two-row grid, making the chrome 111px tall; the reader now owns a one-row,
+horizontally scrollable toolbar with unchanged 44px targets. The panel assertion
+now excludes the intentionally mounted-but-hidden Tutor, whose persistent mount
+preserves conversation state. The focused Pixel suite passes; these fixes do
+not constitute physical-device evidence.
+
+[Readest navigation, pagination, and scrolling lessons](../research/2026-09-17-readest-navigation-pagination-scrolling.md)
+records the exact application and Foliate snapshots, licensing boundary,
+renderer/input/progress findings, regression catalogue, and a staged future
+evaluation plan. It is research only; no renderer approach was adopted here.
 
 ## Previous checkpoint: main merged, cleanup complete (2026-09-08)
 
