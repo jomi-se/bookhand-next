@@ -28,9 +28,6 @@
   .reader[data-panel='tutor'] .reader-panel { z-index: 1; background: var(--canvas); }
   .reader[data-panel='tutor'] .reader-footer { display: none; }
   .tutor-compose { padding-inline: 14px; }
-  .reader-tools { display: grid; grid-template-columns: repeat(5, minmax(44px, 1fr)); }
-  .reader-zoom { grid-column: 1 / -1; justify-self: end; }
-  .reader-chrome > .button-back { align-self: start; }
 }
 @media (max-height: 600px) {
   .tutor-compose { max-block-size: 75%; }

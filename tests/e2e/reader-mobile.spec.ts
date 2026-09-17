@@ -144,8 +144,10 @@ test('a panel replaces the book, takes focus, and gives it back', async ({ page 
     await invoker.click()
 
     const state = await page.evaluate(() => ({
-      headers: document.querySelectorAll('.reader-stage .panel-head').length,
-      panels: document.querySelectorAll('.reader-panel').length,
+      // Tutor stays mounted while closed so its conversation can survive a
+      // panel switch. Count the active surface, not hidden stateful panels.
+      headers: document.querySelectorAll('.reader-panel:not([hidden]) .panel-head').length,
+      panels: document.querySelectorAll('.reader-panel:not([hidden])').length,
       footerShown: getComputedStyle(document.querySelector('.reader-footer')!).display !== 'none',
       bookShown:
         getComputedStyle(document.querySelector('.reader-book-area')!).visibility !== 'hidden',

@@ -590,8 +590,16 @@
 
   .reader-tools {
     flex: 1;
-    justify-content: flex-end;
+    min-inline-size: 0;
+    justify-content: flex-start;
     gap: 2px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+  }
+
+  .reader-tools::-webkit-scrollbar {
+    display: none;
   }
 
   .reader-zoom {
