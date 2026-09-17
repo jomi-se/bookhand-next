@@ -131,8 +131,7 @@ function platform(options: {
 function metadata(providerUrl = 'https://openclaw.test') {
   const provider = new URL(providerUrl)
   const origin = provider.origin
-  const plugin = provider.pathname === '/agent-connect'
-  const issuer = plugin ? `${origin}/agent-connect` : origin
+  const issuer = `${origin}/agent-connect`
   return {
     authorization: {
       issuer,
@@ -150,7 +149,7 @@ function metadata(providerUrl = 'https://openclaw.test') {
       authorization_response_iss_parameter_supported: true,
     },
     resource: {
-      resource: plugin ? `${origin}/agent-connect/v1/responses` : `${origin}/v1/responses`,
+      resource: `${origin}/agent-connect/v1/responses`,
       authorization_servers: [issuer],
       scopes_supported: ['responses'],
       bearer_methods_supported: ['header'],
@@ -299,7 +298,7 @@ describe('AiConnectionStore with the public OpenClaw SDK', () => {
     const generation = store.getSnapshot().generation
     expect(store.getSnapshot()).toEqual({
       phase: 'connected',
-      providerUrl: 'https://openclaw.test',
+      providerUrl: 'https://openclaw.test/agent-connect',
       experience: 'tailscale',
       generation,
     })
@@ -821,7 +820,7 @@ describe('AiConnectionStore with the public OpenClaw SDK', () => {
     const conversationId = '0123456789abcdef0123456789abcdef0123'
     const historyFetch = vi.fn<typeof globalThis.fetch>(async (input, init) => {
       const url = String(input)
-      if (url === 'https://openclaw.test/v1/agent-connect/conversations') {
+      if (url === 'https://openclaw.test/agent-connect/v1/conversations') {
         return json({ conversations: [{
           conversationId,
           expiresAt: 2_000_000_000_000,
@@ -829,7 +828,7 @@ describe('AiConnectionStore with the public OpenClaw SDK', () => {
           previousResponseId: 'resp_1',
         }] })
       }
-      if (url === `https://openclaw.test/v1/agent-connect/conversations/${conversationId}/history`) {
+      if (url === `https://openclaw.test/agent-connect/v1/conversations/${conversationId}/history`) {
         return json({
           conversationId,
           expiresAt: 2_000_000_000_000,
@@ -858,8 +857,8 @@ describe('AiConnectionStore with the public OpenClaw SDK', () => {
 
     expect(historyFetch).toHaveBeenCalledTimes(2)
     expect(historyFetch.mock.calls.map(([input]) => String(input))).toEqual([
-      'https://openclaw.test/v1/agent-connect/conversations',
-      `https://openclaw.test/v1/agent-connect/conversations/${conversationId}/history`,
+      'https://openclaw.test/agent-connect/v1/conversations',
+      `https://openclaw.test/agent-connect/v1/conversations/${conversationId}/history`,
     ])
     for (const [, init] of historyFetch.mock.calls) {
       expect(init).toMatchObject({

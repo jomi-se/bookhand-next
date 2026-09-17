@@ -45,7 +45,8 @@ Implementation complete against approved SDK source
 `e3fa090809e1197dac4a7347a6f48c78240bef44`, SHA-256
 `ccd489d55189df32654c3e3bf2dc667ee65545d4d0d453f52eff7cbbfb128480`.
 Root reports completed source review, SDK tests/typecheck/build/external package
-smoke, and real installed stock-plugin composition PASS on Node 24.15. This is
+smoke, and real installed Agent Connect plugin for OpenClaw composition PASS on
+Node 24.15. This is
 upstream evidence, not a Bookhand live OAuth test. Final vendor filename is
 `open-agent-connect-web-0.0.3-e3fa090.tgz`; bytes are unchanged from the tested
 candidate. Root reviewed/approved Bookhand's migration including the dispatch

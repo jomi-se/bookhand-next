@@ -16,7 +16,24 @@ or requester identity. Bookhand must not add identity headers or treat this URL
 classification as authorization; the gateway and its deployment remain
 responsible for every security check.
 
-## Current checkpoint: live Agent Connect vertical slice accepted (2026-09-15)
+## Current checkpoint: Agent Connect SDK 0.0.9 refresh (2026-09-17)
+
+Bookhand now consumes exact published `@open-agent-connect/web@0.0.9` from the
+public npm registry. This release preserves the approved application-tool
+snapshot on every Open Responses continuation, including the request that
+returns tool results to the model. Package, deterministic, and browser gates
+pass, including 570 unit tests and the isolated-port production browser suite.
+
+Owner acceptance then exercised three parallel read tools followed by a larger
+mixed parallel/sequential run with 20 successful tool completions. The live run
+repaired two EPUB image descriptions, created a four-block Study lesson,
+switched rewritten sections into view, and returned a final assistant response.
+This closes the SDK 0.0.9 continuation gate. Navigation and Study-focus attempts
+that supplied conflicting selectors were safely rejected and remain a separate
+[open Bookhand issue](../issues/tutor-search-navigation.md), not an Agent Connect
+transport failure.
+
+## Previous checkpoint: live Agent Connect vertical slice accepted (2026-09-15)
 
 Bookhand now consumes exact published `@open-agent-connect/web@0.0.5` from the
 public npm registry. The package verifier checks its exact registry resolution
@@ -110,8 +127,9 @@ Checkout inspected clean on `main` at `11f04cc`. Upstream plan: Agent Connect's
 plugin-host `1b8b67a`. Root approved exact SDK signatures; source migration is
 complete against approved SDK source `e3fa090809e1197dac4a7347a6f48c78240bef44`,
 with byte-identical hash `ccd489d…` to the tested candidate. Root reports real
-installed stock-plugin composition PASS on Node 24.15 and approves this migration
-diff, including the dispatch guard. [Exact evidence](plugin-sdk-migration.md).
+installed Agent Connect plugin for OpenClaw composition PASS on Node 24.15 and
+approves this migration diff, including the dispatch guard. [Exact
+evidence](plugin-sdk-migration.md).
 Root authorized branch `work/bookhand-plugin-sdk`; preparation and subsequent
 migration work live there. Local main remains at `11f04cc`; no extra worktree.
 

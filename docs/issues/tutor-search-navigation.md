@@ -23,3 +23,15 @@ integration packaging. Follow-up: capture one failing book/range/command and
 actual reader state, distinguish index availability from source resolution and
 presentation failure, then add a focused regression before implementing a fix.
 No live replay is authorized by this issue record.
+
+## 2026-09-17 live reproduction
+
+After the Agent Connect Web SDK 0.0.9 upgrade, a live Tutor run completed 20
+mixed parallel and sequential tool calls, including durable EPUB repairs and a
+Study lesson. `navigate_book` and `set_study_board_view` calls were separately
+blocked because the generated inputs supplied mutually exclusive operations;
+the UI displayed repeated blocked notices and the handlers changed no state.
+This narrows the defect to Bookhand tool-call argument formation or guidance,
+not transport continuation. The raw rejected payloads were not captured, so a
+follow-up must record them before choosing between a schema, description, model
+adapter, or presentation fix.

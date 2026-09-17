@@ -27,7 +27,7 @@ import {
 
 const expected = {
   '@ai-sdk/open-responses': '2.0.39',
-  '@open-agent-connect/web': '0.0.5',
+  '@open-agent-connect/web': '0.0.9',
   ai: '7.0.93',
   'patch-package': '8.0.1',
   zod: '4.4.3',
@@ -53,12 +53,12 @@ if (!sdkPackage.sideEffects?.includes('./dist/zod-jitless.js') ||
 const lockfile = JSON.parse(await readFile(new URL('../package-lock.json', import.meta.url), 'utf8'))
 const lockedSdk = lockfile.packages?.['node_modules/@open-agent-connect/web']
 const expectedSdkResolution = {
-  resolved: 'https://registry.npmjs.org/@open-agent-connect/web/-/web-0.0.5.tgz',
-  integrity: 'sha512-CeVflg552UJgRG6f3nyAtPKI0lKXDvVq40H6GbQLC6C2gT2Kq8STyGg8LQcHXRIzmhyoRZ7XH95sugoAjKkV/w==',
+  resolved: 'https://registry.npmjs.org/@open-agent-connect/web/-/web-0.0.9.tgz',
+  integrity: 'sha512-k7AwMx5cKh85lOFGq+WLwzm/47qFZXrKgyl7Snb5cUJeBPSZkJrCBj/+RLet9i4S7c1QBKTOhBWmo3GwxsuROg==',
 }
 if (lockedSdk?.resolved !== expectedSdkResolution.resolved ||
     lockedSdk?.integrity !== expectedSdkResolution.integrity) {
-  throw new Error('The lockfile does not select the reviewed published Web SDK 0.0.5 artifact')
+  throw new Error('The lockfile does not select the reviewed published Web SDK 0.0.9 artifact')
 }
 
 const artifacts = [
@@ -136,4 +136,4 @@ if (checkpoint !== 'response-terminal') {
   throw new Error('The public checkpoint helper did not select a successful terminal response')
 }
 
-console.log('AI SDK packaging verified (published @open-agent-connect/web@0.0.5)')
+console.log('AI SDK packaging verified (published @open-agent-connect/web@0.0.9)')

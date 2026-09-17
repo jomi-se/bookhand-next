@@ -280,7 +280,7 @@ async function connection(options: {
   return {
     version: 1,
     providerOrigin: PROVIDER_ORIGIN,
-    endpoint: `${PROVIDER_ORIGIN}/v1/responses`,
+    endpoint: `${PROVIDER_ORIGIN}/agent-connect/v1/responses`,
     clientId: APP_ORIGIN,
     accessToken: options.accessToken ?? 'access-old',
     refreshToken: options.refreshToken ?? 'refresh-old',
@@ -330,12 +330,12 @@ function storeOptions(options: {
 }
 
 describe('AiConnectionStore persistence', () => {
-  it.each(['', '/agent-connect'])('restores a persisted SDK connection with the %s provider layout', async (path) => {
+  it('restores a persisted Agent Connect plugin connection', async () => {
     const now = Date.now()
     const shared = new SharedStorage()
     const base = await connection({ now })
     const persisted = await seedReady({
-      shared, now, connection: { ...base, endpoint: `${PROVIDER_ORIGIN}${path}/v1/responses` },
+      shared, now, connection: base,
     })
     const restored = await readPersistedAiConnection(shared.storage, APP_ORIGIN, now)
     expect(restored?.status).toBe('ready')
@@ -351,15 +351,15 @@ describe('AiConnectionStore persistence', () => {
     }))
     await store.ready
     try {
-      expect(store.getSnapshot()).toMatchObject({ phase: 'connected', providerUrl: `${PROVIDER_ORIGIN}${path}` })
+      expect(store.getSnapshot()).toMatchObject({ phase: 'connected', providerUrl: `${PROVIDER_ORIGIN}/agent-connect` })
       await expect(models.getters[0]()).resolves.toBe('access-old')
       expect(fixture.refreshCalls()).toHaveLength(0)
     } finally { store.dispose() }
   })
 
-  it.each(['', '/agent-connect'])('preserves provider preferences for the supported %s layout', (path) => {
+  it('preserves provider preferences for the Agent Connect plugin layout', () => {
     const shared = new SharedStorage()
-    const providerUrl = `${PROVIDER_ORIGIN}${path}`
+    const providerUrl = `${PROVIDER_ORIGIN}/agent-connect`
     writeAiConnectionPreferences(shared.storage, { providerUrl, experience: 'tailscale' })
     expect(readAiConnectionPreferences(shared.storage)).toEqual({ providerUrl, experience: 'tailscale' })
   })
@@ -400,14 +400,14 @@ describe('AiConnectionStore persistence', () => {
     await first.ready
 
     expect(first.getSnapshot()).toMatchObject({
-      phase: 'connected', providerUrl: PROVIDER_ORIGIN, experience: 'tailscale', generation: expect.any(String),
+      phase: 'connected', providerUrl: `${PROVIDER_ORIGIN}/agent-connect`, experience: 'tailscale', generation: expect.any(String),
     })
     expect(first.getExecution([tool()]).model).toBeTruthy()
 
     const secondModels = modelCapture()
     const second = new AiConnectionStore(storeOptions({ shared, locks, now: () => now, generation, fixture, models: secondModels }))
     await second.ready
-    expect(second.getSnapshot()).toMatchObject({ phase: 'connected', providerUrl: PROVIDER_ORIGIN })
+    expect(second.getSnapshot()).toMatchObject({ phase: 'connected', providerUrl: `${PROVIDER_ORIGIN}/agent-connect` })
     const secondGeneration = second.getSnapshot().generation
     const changed = vi.fn()
     const unsubscribe = second.subscribe(changed)
@@ -460,7 +460,7 @@ describe('AiConnectionStore persistence', () => {
     }))
     await reloaded.ready
     expect(reloaded.getSnapshot()).toEqual({
-      phase: 'disconnected', providerUrl: PROVIDER_ORIGIN, experience: 'tailscale',
+      phase: 'disconnected', providerUrl: `${PROVIDER_ORIGIN}/agent-connect`, experience: 'tailscale',
     })
     expect(shared.storage.getItem(AI_CONNECTION_KEY)).toBeNull()
     expect(shared.storage.getItem(AI_CONNECTION_PREFS_KEY)).not.toBeNull()

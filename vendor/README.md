@@ -1,10 +1,10 @@
 # Agent Connect SDK provenance
 
-## Current dependency — published 0.0.5
+## Current dependency — published 0.0.9
 
-Bookhand installs exact `@open-agent-connect/web@0.0.5` from the public npm
+Bookhand installs exact `@open-agent-connect/web@0.0.9` from the public npm
 registry. Its npm integrity is
-`sha512-CeVflg552UJgRG6f3nyAtPKI0lKXDvVq40H6GbQLC6C2gT2Kq8STyGg8LQcHXRIzmhyoRZ7XH95sugoAjKkV/w==`.
+`sha512-k7AwMx5cKh85lOFGq+WLwzm/47qFZXrKgyl7Snb5cUJeBPSZkJrCBj/+RLet9i4S7c1QBKTOhBWmo3GwxsuROg==`.
 `scripts/verify-ai-sdk-packaging.mjs` checks the installed version and exact
 lockfile registry artifact. The older files retained below are historical
 inputs, not installed dependencies.
@@ -17,7 +17,8 @@ release build.
 SHA-256: `ccd489d55189df32654c3e3bf2dc667ee65545d4d0d453f52eff7cbbfb128480`.
 Approved source: `e3fa090809e1197dac4a7347a6f48c78240bef44`. Root reports completed
 SDK review, SDK tests/typecheck/build/external package smoke, and real installed
-stock-plugin composition passing on Node 24.15. Those are upstream evidence;
+Agent Connect plugin for OpenClaw composition passing on Node 24.15. Those are
+upstream evidence;
 Bookhand did not repeat live provider/auth flows. Refresh CAS identity is retained
 and history JSON is bounded to 1 MiB. No live cutover or npm publication.
 Bytes are identical to the tested `candidate-ccd489d` artifact; only the filename
@@ -63,8 +64,9 @@ npm run build
 npm run verify:csp
 ```
 
-This earlier temporary dependency was replaced by public 0.0.4 on 2026-09-09
-and later by public 0.0.5. Do not publish a patched SDK from this repository.
+This earlier temporary dependency was replaced by public 0.0.4 on 2026-09-09,
+then by public 0.0.5, and finally by public 0.0.9. Do not publish a patched SDK
+from this repository.
 
 The earlier tracked cf3b3d1 tarball is retained as historical material, not the
 installed dependency. The unused 9736495 tarball was preserved in the ignored

@@ -8,7 +8,7 @@ import { ConversationHistoryUnavailableError } from '../../src/ai/conversation-h
 
 const conversationId = '0123456789abcdef0123456789abcdef0123'
 
-function connection(endpoint = 'https://openclaw.test/v1/responses'): OpenClawConnection {
+function connection(endpoint = 'https://openclaw.test/agent-connect/v1/responses'): OpenClawConnection {
   return {
     version: 1,
     providerOrigin: 'https://openclaw.test',
@@ -48,10 +48,9 @@ describe('conversation history SDK projection', () => {
     expect(ConversationHistoryUnavailableError).toBe(OpenClawConversationUnavailableError)
   })
 
-  it.each([
-    ['standalone', 'https://openclaw.test/v1/responses', 'https://openclaw.test/v1/agent-connect/conversations'],
-    ['plugin', 'https://openclaw.test/agent-connect/v1/responses', 'https://openclaw.test/agent-connect/v1/conversations'],
-  ])('uses the real SDK projection and route for the %s layout', async (_layout, endpoint, conversationsUrl) => {
+  it('uses the real SDK projection and Agent Connect plugin route', async () => {
+    const endpoint = 'https://openclaw.test/agent-connect/v1/responses'
+    const conversationsUrl = 'https://openclaw.test/agent-connect/v1/conversations'
     const inert = '<img src=x onerror="globalThis.compromised=true"><script>bad()</script>'
     const getAccessToken = vi.fn(async () => 'access-token')
     const fetch = vi.fn<typeof globalThis.fetch>(async (input) => {
