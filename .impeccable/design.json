@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-02T14:20:00Z",
+  "generatedAt": "2026-09-17T04:41:02Z",
   "title": "Design System: Bookhand",
   "extensions": {
     "colorMeta": {
@@ -388,7 +388,7 @@
       },
       "micro-label": {
         "displayName": "Micro Label",
-        "purpose": "Format tags, study kinds, and dense tool history."
+        "purpose": "Format tags, study kinds, and compact diagnostic metadata; raw agent and tool history belongs in a separate diagnostics surface."
       },
       "code": {
         "displayName": "Code",
@@ -469,8 +469,8 @@
       "name": "Reader Toolbar",
       "kind": "nav",
       "description": "Compact reader identity and quiet access to complete adjacent surfaces.",
-      "html": "<nav class=\"ds-reader-toolbar\" aria-label=\"Reader\"><strong>Bookhand</strong><span>Calculus Made Easy</span><button>Contents</button><button>Study</button><button aria-pressed=\"true\">Text</button></nav>",
-      "css": ".ds-reader-toolbar { min-height: 52px; display: flex; align-items: center; gap: 10px; padding: 4px 10px; border-block-end: 1px solid var(--rule, #e5e7eb); background: var(--canvas, #fafafa); color: var(--ink, #0f1115); font: 500 0.8125rem/1.4 'Inter Variable', system-ui, sans-serif; } .ds-reader-toolbar strong { font: 600 1.125rem/1.3 'Source Serif 4 Variable', Georgia, serif; } .ds-reader-toolbar span { min-width: 0; margin-inline-end: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted, #5e6470); } .ds-reader-toolbar button { min-width: 44px; min-height: 44px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit; } .ds-reader-toolbar button:hover { background: var(--accent-quiet, #f8e9e4); } .ds-reader-toolbar button[aria-pressed='true'] { color: var(--accent, #c24a2b); background: var(--accent-quiet, #f8e9e4); } .ds-reader-toolbar button:focus-visible { outline: 2px solid var(--accent, #c24a2b); outline-offset: 2px; }"
+      "html": "<nav class=\"ds-reader-toolbar\" aria-label=\"Reader\"><strong>Bookhand</strong><span>Calculus Made Easy</span><div><button>Search</button><button>Contents</button><button>Study</button><button>Tutor</button><button aria-pressed=\"true\">Text</button></div></nav>",
+      "css": ".ds-reader-toolbar { min-height: 52px; display: flex; align-items: center; gap: 10px; padding: 4px 10px; border-block-end: 1px solid var(--rule, #e5e7eb); background: var(--canvas, #fafafa); color: var(--ink, #0f1115); font: 500 0.8125rem/1.4 'Inter Variable', system-ui, sans-serif; } .ds-reader-toolbar strong { font: 600 1.125rem/1.3 'Source Serif 4 Variable', Georgia, serif; } .ds-reader-toolbar span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted, #5e6470); } .ds-reader-toolbar div { min-width: 0; margin-inline-start: auto; display: flex; overflow-x: auto; scrollbar-width: none; } .ds-reader-toolbar div::-webkit-scrollbar { display: none; } .ds-reader-toolbar button { min-width: 44px; min-height: 44px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit; } .ds-reader-toolbar button:hover { background: var(--accent-quiet, #f8e9e4); } .ds-reader-toolbar button[aria-pressed='true'] { color: var(--accent, #c24a2b); background: var(--accent-quiet, #f8e9e4); } .ds-reader-toolbar button:focus-visible { outline: 2px solid var(--accent, #c24a2b); outline-offset: 2px; }"
     },
     {
       "name": "Reader Panel",
@@ -481,11 +481,11 @@
       "css": ".ds-reader-panel { width: min(320px, 100%); min-height: 240px; border-inline-start: 1px solid var(--rule, #e5e7eb); background: var(--canvas, #fafafa); color: var(--ink, #0f1115); font: 400 0.8125rem/1.5 'Inter Variable', system-ui, sans-serif; } .ds-reader-panel header { min-height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 4px 14px; border-block-end: 1px solid var(--rule, #e5e7eb); } .ds-reader-panel header button { width: 44px; height: 44px; border: 0; border-radius: 6px; background: transparent; color: inherit; font-size: 1.25rem; } .ds-reader-panel header button:hover { background: var(--accent-quiet, #f8e9e4); } .ds-reader-panel header button:focus-visible, .ds-reader-panel a:focus-visible { outline: 2px solid var(--accent, #c24a2b); outline-offset: 2px; } .ds-reader-panel div { display: grid; padding: 10px 14px; } .ds-reader-panel a { padding: 10px 0; border-block-end: 1px solid var(--rule, #e5e7eb); color: inherit; text-decoration: none; } .ds-reader-panel a:hover { color: var(--accent, #c24a2b); }"
     },
     {
-      "name": "Grounded Study Quotation",
+      "name": "Composed Study Lesson",
       "kind": "custom",
-      "description": "A native study artifact that leads with the source-grounded learning material.",
-      "html": "<figure class=\"ds-study-quote\"><blockquote>Let the distance x increase by a small amount.</blockquote><figcaption>Chapter X · Return to source</figcaption></figure>",
-      "css": ".ds-study-quote { margin: 0; padding: 14px 16px; border: 0; border-inline-start: 2px solid var(--accent, #c24a2b); background: transparent; color: var(--ink, #0f1115); } .ds-study-quote blockquote { margin: 0; font: 400 1rem/1.6 'Source Serif 4 Variable', Georgia, serif; } .ds-study-quote figcaption { margin-block-start: 10px; color: var(--muted, #5e6470); font: 500 0.6875rem/1.4 'Inter Variable', system-ui, sans-serif; } .ds-study-quote:hover { background: color-mix(in oklch, var(--rule, #e5e7eb) 30%, transparent); } .ds-study-quote:focus-within { outline: 2px solid var(--accent, #c24a2b); outline-offset: 3px; }"
+      "description": "A titled, ordered lesson whose source and provenance appear once while native blocks carry the teaching sequence.",
+      "html": "<article class=\"ds-study-lesson\"><header><div><small>Created with an agent</small><h3>Seeing the derivative as slope</h3></div><button>Chapter X</button></header><section><p>Start with the secant line through two nearby points.</p></section><section><blockquote>Let the distance x increase by a small amount.</blockquote></section><section class=\"ds-study-question\"><strong>Try it</strong><p>What happens to the secant slope as the second point approaches the first?</p></section></article>",
+      "css": ".ds-study-lesson { max-width: 48rem; margin-inline: auto; padding: 8px 0 24px; border-block-end: 1px solid var(--rule, #e5e7eb); color: var(--ink, #0f1115); } .ds-study-lesson > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-block-end: 22px; } .ds-study-lesson small { color: var(--muted, #5e6470); font: 500 0.6875rem/1.4 'Inter Variable', system-ui, sans-serif; } .ds-study-lesson h3 { max-width: 24ch; margin: 3px 0 0; font: 600 clamp(1.5rem, 1.15rem + 0.9vw, 2rem)/1.12 'Source Serif 4 Variable', Georgia, serif; letter-spacing: -0.02em; } .ds-study-lesson button { min-height: 44px; border: 0; background: transparent; color: var(--muted, #5e6470); text-decoration: underline; } .ds-study-lesson > section { padding-block: 15px; font: 400 1rem/1.6 'Source Serif 4 Variable', Georgia, serif; } .ds-study-lesson > section + section { border-block-start: 1px solid color-mix(in oklab, var(--rule, #e5e7eb) 70%, transparent); } .ds-study-lesson blockquote { margin: 0; } .ds-study-question { margin-block-start: 6px; padding: 18px !important; border: 1px solid var(--rule, #e5e7eb) !important; border-radius: 6px; background: var(--raised, #fff); } .ds-study-lesson:focus-within { outline: 2px solid var(--accent, #c24a2b); outline-offset: 3px; }"
     },
     {
       "name": "Panel Field",
@@ -561,7 +561,7 @@
       },
       {
         "name": "The Diagnostics Are Not Study Rule",
-        "body": "Raw agent telemetry — tool names, call lists, counts, success and failure history — never appears in Study. Study is the learner's material; a scrolling log of what a model did is a different surface with a different audience, and putting it in the study viewport tells the learner the machinery matters as much as the lesson. The only agent-facing element Study may carry is a compact semantic status for guidance happening right now, saying what is being explained and exposing Back and Stop. This is an invariant, and the shipped board does not yet satisfy it: `StudyBoardPanel` still accepts and renders an `agentActivity` node above the learner's content. Treat that as a defect against this rule, not as precedent.",
+        "body": "Raw agent telemetry — tool names, call lists, counts, success and failure history — never appears in Study. Study is the learner's material; a scrolling log of what a model did is a different surface with a different audience, and putting it in the study viewport tells the learner the machinery matters as much as the lesson. The only agent-facing element Study may carry is a compact semantic status for guidance happening right now, saying what is being explained and exposing Back and Stop. This is an invariant. Observability must remain a separate diagnostics surface.",
         "section": "components"
       }
     ],
