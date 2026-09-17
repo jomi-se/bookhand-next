@@ -58,7 +58,12 @@ not constitute physical-device evidence.
 [Readest navigation, pagination, and scrolling lessons](../research/2026-09-17-readest-navigation-pagination-scrolling.md)
 records the exact application and Foliate snapshots, licensing boundary,
 renderer/input/progress findings, regression catalogue, and a staged future
-evaluation plan. It is research only; no renderer approach was adopted here.
+evaluation plan. The durable, implementation-neutral requirements distilled
+from that study are indexed in the
+[reader-engine specifications](../specs/reader-engine/README.md), including a
+capability coverage inventory, compatibility-spike checklist, and owner-fork
+update gate. This is research and specification only: no renderer approach,
+dependency, implementation task, or validation contract was adopted here.
 
 ## Previous checkpoint: main merged, cleanup complete (2026-09-08)
 

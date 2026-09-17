@@ -5,16 +5,26 @@ Observed: 2026-09-17
 Source snapshots:
 
 - Readest application: `jomi-se/readest@180795fb4960c32ed11539e6ba70085a5041ecaf`
-  (`0.12.6`)
+  (`0.12.6`; local checkout commit, not reachable from the public remote when
+  this document was written)
 - Readest Foliate fork: `readest/foliate-js@ca3f118269f8d78811ef17a1b147363c321273d7`
 - Bookhand Foliate baseline:
   `johnfactotum/foliate-js@78914aef4466eb960965702401634c2cb348e9b1`
 
 This is a source study and future-work brief. It does not change Bookhand's
 renderer, navigation semantics, or accepted architecture. The local Readest
-checkout was clean. Its Foliate submodule was not initialized there, so the
-exact gitlink commit was inspected separately. The Readest application and its
-tests were not executed in this investigation.
+checkout and initialized Foliate submodule were inspected at the exact commits
+above. The Readest application and its tests were not executed in this
+investigation; their AGPL sources were used only to identify observable
+behavior, failure modes, and validation ideas.
+
+The investigation compared the shared ancestor, every post-divergence Foliate
+commit subject and touched-file set, meaningful source deltas, Readest's
+application integration, and its reader regression catalogue. It was detailed
+enough to classify the fork's capability families, ownership, likely
+integration conflicts, and a safe evaluation plan. It was not a legal audit,
+a proof that every commit is correct, an execution of Readest's test suite, or
+a working Bookhand spike.
 
 Related research: [Readest and Reedy retrieval lessons](2026-09-01-readest-retrieval-lessons.md).
 
@@ -43,13 +53,42 @@ The recommendation is not to transplant all of this. Preserve Bookhand's
 surface. Evaluate the Readest Foliate fork behind the adapter as a renderer
 candidate, and adopt its behavioral contracts and regression ideas in stages.
 
+In plain English: **follow the fork, but do not follow its moving branch or put
+it into production yet**. Test one exact commit behind Bookhand's existing
+adapter. If it survives Bookhand's security, remaster, annotation, CFI, and
+phone tests, it is likely a better renderer foundation than independently
+rediscovering years of edge cases.
+
+## What Bookhand would gain
+
+The practical value is not “more Foliate.” It is a reader that behaves like a
+mature reading application when books, browsers, and inputs become awkward.
+
+| Gain | What it means for the reader | Where it comes from |
+| --- | --- | --- |
+| Continuous chapter scrolling | Scrolling does not pause or flash at every EPUB section boundary. Nearby sections are preloaded and old ones are removed without moving the visible text. | MIT Foliate fork |
+| Stable place during reflow | Rotating the phone, resizing, changing type, or switching between scroll and pages returns to the same passage rather than a nearby page. | MIT Foliate fork |
+| More reliable pagination | Images, tables, covers, late fonts, publisher CSS, and oversized boxes are much less likely to clip text, produce blank pages, or shift the location after load. | MIT Foliate fork |
+| Correct reading direction | Previous and next remain correct for LTR, RTL, and much of vertical-rl instead of assuming that physical right always means next. | MIT Foliate fork, with some app-level input mapping |
+| Predictable input | Wheel momentum produces one intended turn; selection, pinch zoom, links, native controls, and page-turn gestures have explicit ownership. | MIT renderer plus AGPL application behavior that Bookhand must independently implement |
+| Safer progress restoration | Hot renderer position, visible UI progress, queued persistence, and the confirmed last-read location are treated as different states. Backgrounding does not silently lose the newest position. | MIT relocation data plus AGPL application behavior that Bookhand must independently implement |
+| Better fixed-layout foundations | A later fixed-layout project could gain virtualized pages, spreads, scaling, panning, pinch zoom, RTL placement, and resize preservation. | MIT Foliate fork; not current Bookhand scope |
+| A map of real failures | Readest's regressions identify the cases Bookhand should test before users report them: resize drift, delayed images, hostile CSS, wheel inertia, iframe listeners, vertical text, and long continuous sessions. | Behavior may be re-expressed in Bookhand tests; AGPL test code itself must not be copied |
+
+The highest-value near-term gains are stable anchoring, correct direction,
+gesture ownership, and robust EPUB layout. Continuous multi-section scrolling
+is the largest visible feature, but it should come after those correctness
+contracts. Fixed-layout virtualization and page-turn animation are valuable
+later projects, not reasons to widen the first renderer change.
+
 ## Licensing boundary
 
-The distinction matters before any implementation work:
+Bookhand is MIT licensed. Readest contains two relevant repositories with
+different licenses, so “Readest code” is not one undifferentiated source.
 
 - The Readest application is AGPL-3.0. Its hooks, stores, components, and tests
   are evidence about requirements and failure modes. Do not copy that code into
-  Bookhand unless the project deliberately accepts the license consequence.
+  MIT Bookhand unless the project deliberately accepts the AGPL consequence.
 - `readest/foliate-js` is MIT licensed. Bookhand may evaluate, depend on, fork,
   or selectively port that engine code while retaining its copyright and
   license notices.
@@ -57,13 +96,86 @@ The distinction matters before any implementation work:
   requirements as “resize preserves the visible passage” or “one wheel gesture
   turns one page,” then create its own fixtures and tests.
 
+Reading AGPL code does not change Bookhand's license. Copying its protected
+expression into a combined application is the risk. The safe working rule is:
+
+1. copy or depend on renderer code only from the MIT `readest/foliate-js`
+   repository;
+2. retain the MIT copyright and permission notice, and record the exact commit
+   in `THIRD_PARTY_NOTICES.md` if Bookhand adopts it;
+3. use the AGPL application's behavior as research, then write Bookhand-owned
+   integration code, fixtures, and assertions independently; and
+4. check the history and third-party notices of any substantial individual
+   file before porting it.
+
+This is an engineering boundary, not legal advice. It is deliberately more
+conservative than assuming that all code used by Readest inherits the Foliate
+fork's MIT license.
+
 Primary source links:
 
-- <https://github.com/jomi-se/readest/tree/180795fb4960c32ed11539e6ba70085a5041ecaf>
+- <https://github.com/readest/readest>
+- <https://github.com/readest/readest/blob/main/LICENSE>
+- <https://github.com/readest/readest/blob/main/.gitmodules>
 - <https://github.com/readest/foliate-js/tree/ca3f118269f8d78811ef17a1b147363c321273d7>
+- <https://github.com/readest/foliate-js/blob/ca3f118269f8d78811ef17a1b147363c321273d7/LICENSE>
 - <https://github.com/johnfactotum/foliate-js/tree/78914aef4466eb960965702401634c2cb348e9b1>
 
+## How Readest and Bookhand obtain Foliate
+
+Readest does not install its fork from the npm registry. Its `.gitmodules` file
+declares `packages/foliate-js` as a Git submodule pointing to
+`https://github.com/readest/foliate-js.git`. The Readest parent repository
+stores an exact Foliate commit pointer; initializing submodules materializes
+that separate MIT repository inside the checkout.
+
+The fork's `package.json` still says `0.0.0`, and its own README says the API is
+unstable and unreleased. An npm registry package named `foliate-js` existed at
+the time of this investigation, but it pointed to John Factotum's upstream,
+not the Readest fork. Do not install that registry name expecting Readest's 212
+commits.
+
+Bookhand already avoids that ambiguity. Its `package.json` points npm directly
+at an exact GitHub archive of official Foliate:
+
+```json
+"foliate-js": "https://github.com/johnfactotum/foliate-js/archive/78914aef4466eb960965702401634c2cb348e9b1.tar.gz"
+```
+
+For the first evaluation, Bookhand can keep the same dependency workflow and
+change only the repository and exact commit in a disposable branch:
+
+```json
+"foliate-js": "https://github.com/readest/foliate-js/archive/ca3f118269f8d78811ef17a1b147363c321273d7.tar.gz"
+```
+
+That would test the same MIT code without adding submodule operations to every
+checkout and CI job. A submodule or Bookhand-owned fork becomes attractive only
+if Bookhand needs to carry renderer patches, inspect history routinely, or
+contribute changes upstream. In every form, pin a commit; never depend on a
+floating branch.
+
+## Recommendation at a glance
+
+- **Should we watch the Readest fork?** Yes. It is the strongest known source
+  of Foliate renderer hardening relevant to Bookhand.
+- **Should we copy the Readest application?** No. It is AGPL and its product
+  architecture is not Bookhand's architecture.
+- **Should we replace Foliate immediately?** No. First run a pinned,
+  adapter-contained compatibility spike.
+- **Should we cherry-pick 212 commits one by one?** Probably not. The pagination,
+  anchoring, iframe lifecycle, and input changes are interdependent.
+- **What is the likely adoption shape if the spike passes?** Keep
+  `ReaderAdapter`, point the existing archive dependency at a reviewed Readest
+  commit, preserve the MIT notice, and update only through tested commit bumps.
+- **When would we maintain our own fork?** When Bookhand-specific CSP,
+  persistent-frame, annotation, or remaster requirements need durable engine
+  patches that Readest cannot take upstream.
+
 ## System shape
+
+**Provenance: mixed.** The renderer boundary is MIT; application coordination
+is AGPL research-only; the final conclusion is a Bookhand recommendation.
 
 Readest divides responsibility into three layers:
 
@@ -91,6 +203,8 @@ reading-order operations and exact source targets. A future renderer upgrade
 should happen beneath that boundary.
 
 ## Reflowable pagination and continuous scrolling
+
+**Provenance: MIT renderer facts and Bookhand inference.**
 
 ### Layout and EPUB normalization
 
@@ -169,6 +283,10 @@ the renderer's only live state. Bookhand should distinguish:
 
 ## Relocation, restoration, and persistence
 
+**Provenance: mixed.** Renderer relocation is MIT; application scheduling and
+durable-save behavior is AGPL research-only; the final paragraph is a Bookhand
+recommendation.
+
 Readest handles different time scales separately.
 
 Inside the renderer, relocation waits for ordinary scrolling to settle, but
@@ -200,6 +318,10 @@ and persisted confirmed position. Agent-directed or deep-link navigation must
 also remain a preview until the learner takes a reading action.
 
 ## Reading direction and writing mode
+
+**Provenance: mixed.** Axis/layout behavior is MIT renderer evidence;
+physical-input mapping crosses the MIT renderer and AGPL application; support
+claims and priorities are Bookhand recommendations.
 
 Readest separates concepts that are easy to conflate:
 
@@ -238,6 +360,10 @@ The next design should keep “previous/next in reading order” as the domain
 primitive and centralize physical-side mapping using detected book direction.
 
 ## Touch, wheel, mouse, and keyboard input
+
+**Provenance: mixed.** Renderer event boundaries and primitives are MIT;
+gesture, key, and native-input coordination observed in the application is
+AGPL research-only; Bookhand must implement application policy independently.
 
 Rendered EPUB events occur inside section iframes and do not bubble to the app.
 Readest treats forwarding and gesture ownership as architecture rather than
@@ -283,6 +409,8 @@ model's breadth, not immediate Bookhand scope.
 
 ## Navigation targets, history, TOC, and search
 
+**Provenance: MIT renderer facts and Bookhand recommendation.**
+
 Readest routes TOC hrefs, CFIs, fractions, section indexes, page-list entries,
 and search results through the same resolver and `goTo()` path. CFI generation
 joins a section base CFI with a range CFI; resolution reverses that operation.
@@ -302,6 +430,8 @@ that every result—TOC, search, annotation, study source, agent focus, or deep
 link—must converge on the same exact navigation route and history semantics.
 
 ## Fixed-layout books, PDF, and comics
+
+**Provenance: MIT renderer facts and Bookhand scope recommendation.**
 
 Readest's MIT fixed-layout renderer is far beyond Bookhand's current EPUB-first
 scope. It supports:
@@ -331,6 +461,9 @@ Bookhand's current format scope.
 
 ## Page-turn animation
 
+**Provenance: mixed MIT renderer and AGPL application behavior, with a
+Bookhand recommendation to keep the scope separate.**
+
 Readest implements instant turns, push transitions, vertical-writing swaps,
 View Transition slide and curl, finger-scrubbed progress, e-ink and reduced
 motion bypasses, main-thread fallbacks for surfaces too large to composite, and
@@ -344,6 +477,9 @@ anchor, direction, or continuous-scroll project. Page curl belongs after
 navigation and restoration are boringly reliable.
 
 ## Regression catalogue to emulate
+
+**Provenance: AGPL application tests used only as a behavioral catalogue.** No
+test code, fixtures, comments, or distinctive structure may be copied.
 
 Readest's tests may be its most transferable asset. The application tests are
 AGPL, so Bookhand should create independent fixtures and assertions from the
@@ -377,7 +513,155 @@ Additional focused suites cover wheel accumulation, hardware modifier matching,
 iframe keyboard selection, input listener ownership, touch selection, and
 accessibility visibility geometry.
 
+## Systematic fork-history classification
+
+The exact divergence anchor was verified in a temporary checkout containing
+both histories: `6b11e1744346f60504b727984f7d42f0fef3ab54` is the merge base of
+Bookhand's official pin and the inspected Readest fork commit. The fork has 212
+commits after that anchor; the official line leading to Bookhand's pin has 14.
+Commit counts are context, not a quality score.
+
+The 212 fork commits fall into overlapping families. One commit can belong to
+more than one family, especially the first large compatibility import, so the
+following is an inventory rather than an additive tally:
+
+| Family | Verified themes in history and source | Bookhand disposition |
+| --- | --- | --- |
+| Reflowable layout and lifecycle | Continuous adjacent-section loading, bounded removal, resize stabilization, anchors, scroll bounds, fractional-pixel fixes, background painting, vertical/RTL layout, covers, tables, oversized boxes, null guards | Evaluate as the highest-value MIT capability family, but adapt to the persistent-frame decision |
+| EPUB parsing and resources | Missing metadata, cover fallbacks, NCX fallback, malformed XML/XHTML, encoded hrefs, Adobe font keys, resource reference counting, section fragments, cached section content | Adopt compatible parser hardening selectively or through a pinned fork after corpus validation |
+| CFI, search, progress, and navigation | Inert/skip markers, CFI progress, styled-node excerpts, regex/proximity modes, physical page data, section fragment targets, relocation during continuous scroll | Keep Bookhand's exact CFI and local FTS model; adopt only renderer primitives that preserve it |
+| Overlays, selection, and footnotes | Zoom-aware geometry, block-spanning highlights, heading ranges, vertical overlays, loupe support, scroll locks, PDF overlays, nested/empty footnotes | Adopt compatible MIT drawing fixes; independently implement app gesture and popup policy |
+| Accessibility | Focus targets for semantic navigation, keyboard focus after navigation, meaningful iframe labeling, and visibility-based hiding of off-screen preloads | Adopt the behaviors, subject to real assistive-technology testing |
+| Fixed layout, PDF, and comics | Virtualized scroll, bounded loading, zoom/pan, spreads, seams, page labels, PDF direction, memory limits, bitmap sizing, CBZ ordering | Defer as distinct format projects; do not let these widen an EPUB renderer change |
+| TTS | Sentence segmentation, current ranges, next/previous marks, node filters, PDF text layers | Defer as a separate product capability with its own semantics and accessibility review |
+| Animation and device integration | GPU/RAF fallbacks, slide/curl tracking, e-ink bypass, stylus, WebKit compatibility, native page-turn inputs | Reject from the first compatibility bump unless required for correctness; review later in isolated scopes |
+| Packaging and dependencies | CSSStyleSheet polyfill, old-WebKit fallbacks, PDF.js upgrades and assets, package metadata that still identifies upstream and version `0.0.0` | Treat as supply-chain and compatibility review work, not incidental renderer code |
+
+The most concentrated changes are in `paginator.js`, `fixed-layout.js`,
+`pdf.js`, `epub.js`, `overlayer.js`, `view.js`, `footnotes.js`, `search.js`, and
+`tts.js`. Comparing the exact snapshots changes 25 files. Generated PDF.js
+vendor files dominate the raw 53,089 additions and 59,338 deletions, which is
+why raw line counts are a poor review guide. Review the authored modules and
+third-party asset/license changes separately.
+
+Useful history landmarks include continuous EPUB scroll (`e925e9d`), backward
+preload/navigation drift (`c3b2d09`, Readest issue 4112), delayed background
+image restoration (`bf84163`), mixed writing-mode eviction (`befe16d`, PR 13),
+resource lifetime across multiple views (`c1f0c3c`, PR 78), malformed XHTML
+fallback (`63a2eb1`, PR 70), periodic relocation during uninterrupted scroll
+(`fd91451`, PR 72), vertical-rl physical turns (`cecaef9`, PR 45), and ordered
+overlapping MOBI reads (`ca3f118`, PR 86). These references explain why a
+change exists; they do not replace local validation.
+
+## Renderer lifecycle, parsing, and resource ownership
+
+**Verified MIT renderer facts.** The renderer now expects more concurrency
+than Bookhand's current one-section presentation: adjacent sections, search or
+footnote views, pre-rendered fixed-layout pages, and overlapping asynchronous
+loads can coexist. It therefore carries explicit view destruction, resource
+reference counting, bounded preload controls, and stale-state guards. EPUB
+loading has fallbacks for missing metadata and covers, malformed package XML,
+XHTML that must be retried as HTML, encoded reserved characters in archive
+paths, navigation documents with no useful links, and incorrect font
+obfuscation identifiers.
+
+**Bookhand inference.** Multi-view resource ownership is directly relevant
+even if Bookhand rejects continuous scroll: section snapshots, footnote
+previews, annotation drawing, remaster comparison, and the visible reader can
+otherwise revoke the same object URL out from under each other. Conversely,
+the fork's expectation that it may create and navigate multiple iframes
+conflicts with ADR 0005's single persistent browsing context. A compatibility
+layer must define whether Bookhand emulates multiple logical views inside one
+frame, relaxes the feature to single-section scroll, or records a new ADR. The
+spike may not silently discard the current decision.
+
+**Recommendation.** Adopt parser and resource-lifetime behavior when it can be
+proven beneath `ReaderAdapter`; adapt multi-view lifecycle independently until
+the persistent-frame conflict is resolved. On malformed content, retry only
+bounded alternate parses, preserve a named diagnostic, and keep the last safe
+surface rather than converting every failure into permissive HTML.
+
+## Selection, overlays, footnotes, and accessibility
+
+**Verified MIT renderer facts.** Selection and annotation work includes range
+splitting across block/text nodes, zoom-aware coordinates, vertical layout,
+fixed-layout view boxes, explicit overlay recreation after an asynchronous
+text layer appears, CFI skip/inert markers, and scroll locking during instant
+annotation. Footnotes tolerate empty or anchor-only structures and nested
+links. The renderer focuses navigated targets for keyboard or assistive use and
+marks only truly off-screen preloaded views `aria-hidden`; content intersecting
+the viewport remains exposed.
+
+**Verified AGPL application behavior.** The application resolves competition
+between selection, page turning, pinch, instant annotation, native gesture
+areas, and trailing synthetic clicks. It also forwards iframe keyboard events
+synchronously, keeps global input listener counts stable across rerenders, and
+recreates transient search or annotation overlays only in visible documents.
+These are requirements only; Bookhand must not copy the hooks or tests.
+
+**Bookhand inference and recommendation.** Bookhand should use one gesture
+ownership policy and one renderer-listener lifetime, while keeping permanent
+annotations and temporary tutor cues separate. Every saved range must still
+round-trip against a fresh accepted section revision. An unresolvable overlay
+must not block reading, and visible multi-section content must not disappear
+from the accessibility tree merely because it is not the primary section.
+
+## Performance, cancellation, and security observations
+
+**Verified MIT renderer facts.** Bounded schedulers appear where unbounded work
+caused actual failures: fixed-layout pages cap resident views and concurrent
+loads; PDF range reads are throttled to avoid WebView memory exhaustion;
+continuous EPUB scroll prunes distant sections; large animation surfaces fall
+back from expensive paths; overlapping MOBI reads are serialized; and view
+destruction/null guards tolerate teardown racing with asynchronous rendering.
+
+**Verified AGPL application behavior.** Hot relocation work is coalesced,
+durable writes are debounced, visibility and page-hide transitions flush state,
+and listener registration is stable while callbacks stay current. Again, these
+are behavioral observations, not reusable code.
+
+**Bookhand conflict.** Readest can optionally accommodate publisher scripts and
+native bridges. Bookhand deliberately blocks packaged scripts, remote loads,
+forms, nested browsing, and privileged bridge access. A fork bump must not
+inherit a more permissive sandbox, event bridge, URL loader, or PDF worker
+asset path. Multi-frame loading also expands CSP and resource-lifetime review.
+
+**Recommendation.** Every async open, preload, search, resize, annotation draw,
+and remaster refresh needs an ownership token or generation check and a bounded
+queue. Cancellation must leave a readable last-safe surface and must release
+listeners, object URLs, observers, timers, canvases, and frames. Security
+fixtures must observe network and parent-state effects, not merely inspect
+attributes.
+
+## Limitations and behavior not to inherit
+
+- The fork remains version `0.0.0`, describes its API as unstable, and has no
+  release contract suitable for a floating dependency.
+- Vertical-lr scrolled reflow is explicitly incomplete. Vertical-rl has deeper
+  support but still requires its own fixtures and physical input validation.
+- Fixed-layout selection and gestures spanning separate page frames remain
+  incomplete or deliberately unsupported.
+- Byte-size location and time estimates are display conveniences, not durable
+  reading positions, semantic page counts, or citation anchors.
+- Continuous scroll's multiple iframe model is not compatible by assumption
+  with Bookhand's persistent same-origin frame.
+- Application behavior assumes native/WebView integrations in several places.
+  Volume keys, stylus events, e-ink refresh, native PDF bridges, and platform
+  animation paths are not browser-product requirements.
+- Page animation substantially increases cancellation, snapshot, overlay, and
+  gesture coupling. It should not enter a correctness-focused renderer bump.
+- Readest's application persistence, sync, remote services, reader shell, and
+  provider integrations conflict with Bookhand's local-first product boundary.
+- The application and its regression code are AGPL. Only independently stated
+  behaviors and newly authored Bookhand fixtures/assertions may cross into this
+  repository unless Bookhand deliberately changes its licensing decision.
+
+The topical, implementation-neutral Bookhand requirements distilled from this
+study now live in [the reader-engine specification index](../specs/reader-engine/README.md).
+
 ## Recommended future sequence
+
+**Provenance: Bookhand recommendation based on the mixed evidence above.**
 
 ### 1. Turn lessons into Bookhand-owned contracts
 
@@ -405,7 +689,7 @@ to UI or WebMCP. Run compatibility gates for:
 - section snapshots and accepted remaster revision switching;
 - safe open/close under React StrictMode;
 - current deterministic, malformed, and malicious EPUB fixtures; and
-- the complete Pixel 7 flow.
+- the current Pixel 7 flow.
 
 The persistent same-origin frame is the largest likely integration conflict.
 Readest's multi-frame strip and Bookhand's controlled-browser workaround must

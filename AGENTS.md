@@ -131,6 +131,9 @@ usage reset without reconstructing the project from chat history.
 - Add tests for public behavior as it appears.
 - Keep browser packages free of Node-only runtime imports.
 - Treat imported book content and agent-produced content as untrusted input.
+- Reader implementation agents must work from Bookhand's reader-engine
+  specifications and the MIT `jomi-se/foliate-js` fork. Do not clone, inspect,
+  or copy from the AGPL Readest application.
 - Keep WebMCP tool inputs narrow, schema-described, and observable in the UI.
 - Preserve user control over persistent changes and destructive operations.
 - Record architectural forks before implementing both sides of them.
