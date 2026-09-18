@@ -110,6 +110,24 @@ reason; do not change the shared default merely for one such task.
 `CLAUDE.md` imports this file. Keep durable cross-harness guidance here rather
 than maintaining two copies.
 
+## Agent skills
+
+### Issue tracker
+
+Repository-local Markdown uses `docs/issues/` for confirmed defects and
+`docs/plan/` for accepted specifications and implementation tickets. See
+`docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+File-backed issue statuses use the five default triage roles. See
+`docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Bookhand uses one domain context with optional root `CONTEXT.md` vocabulary and
+architectural decisions under `docs/decisions/`. See `docs/agents/domain.md`.
+
 ## Documentation
 
 - Product North Star: `docs/product-north-star.md`
