@@ -45,3 +45,10 @@ test-results/
 
 # Validation evidence: screenshots and traces kept as evidence for a decision.
 artifacts/
+
+# Locally installed skill packs. Repository-owned skills that are already
+# tracked remain tracked; local package-manager projections and their lockfile
+# should not become product source by accident.
+.agents/skills/
+.claude/skills/
+skills-lock.json
