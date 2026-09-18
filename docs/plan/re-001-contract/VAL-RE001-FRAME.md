@@ -1,0 +1,8 @@
+# VAL-RE001-FRAME: One same-origin browsing context survives reader transitions
+
+Surface: browser.
+Needs: Bookhand `1743074` with official Foliate `78914aef4466eb960965702401634c2cb348e9b1`, the exact candidate production build, identical fixture/profile, and the candidate's exact persistent-frame transform.
+Behavior: Initial open loads Bookhand's same-origin reader frame once. During normal operation within one open-book lifetime, previous, next, nested TOC, exact CFI, Retry, Original/Rewritten, Tutor focus, Back, and Stop reuse the same iframe Window and never perform post-load child navigation to `blob:`, `data:`, or `srcdoc`. Reload and close/reopen create new allowed lifetimes. One additional replacement is allowed only after the 5,000 ms navigation deadline: Bookhand keeps the old frame visible while a speculative same-origin view opens/initializes for at most 20,000 additional ms, then atomically swaps it and establishes a new recovery lifetime at the preserved location; failed recovery leaves the old frame visible with Retry.
+Evidence: A named transition matrix with frame URL, Window marker, frame-load count and timing before/after every normal case; explicit reload, close/reopen, successful stalled-view replacement, and failed-recovery lifetime rows; page `framenavigated`/request observations; trace on failure.
+Fail: Browsing-context replacement outside the named lifetime boundaries, blanking/removing the old frame before successful recovery, recovery beyond the 25,000 ms total bound, forbidden child URL, or candidate multi-view behavior silently activates.
+Oracle: ADR 0005.

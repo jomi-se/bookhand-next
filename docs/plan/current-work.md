@@ -2,6 +2,21 @@
 
 Documentation triage updated: 2026-09-14.
 
+## Active: RE-001 pinned Foliate fork compatibility spike
+
+The owner selected RE-001 for a disposable, evidence-first evaluation of the
+exact MIT fork candidate behind `ReaderAdapter`. This is not production
+adoption. The [live progress ledger](re-001-foliate-fork-progress.md) is the
+resumption source and is updated at every planning revision, worker handoff,
+root review, validator verdict, and gate. The
+[mission](re-001-foliate-fork-compatibility-spike.md),
+[inventory](re-001-foliate-fork-inventory.md), contracts, and
+[provisional topology](re-001-foliate-fork-build-tasks.md) passed through two
+clean-context contract reviews; their substantive findings were incorporated.
+The review loop is now closed to keep this disposable spike proportionate, and
+the live ledger records the remaining evidence limits. No candidate dependency
+change has been made on `main`; W1 is the next action.
+
 ## Pending: infer the connection experience from the provider address
 
 Remove the manual Tailscale-versus-HTTPS selector from the Tutor connection

@@ -8,9 +8,12 @@ is reviewable, reversible, and tied to one exact source commit.
 
 ## Why it matters
 
-`readest/foliate-js` is MIT and technically promising, but it is unreleased,
-versioned `0.0.0`, API-unstable, and carries 212 post-divergence commits across
-many unrelated capability families. Bookhand also has a deliberate
+The owner-controlled `jomi-se/foliate-js` fork is MIT and technically
+promising, but it is unreleased, versioned `0.0.0`, API-unstable, and the
+selected `ca3f118` commit carries 212 post-divergence commits across many
+unrelated capability families. That commit was formerly selected directly
+from `readest/foliate-js`; the owner fork is now Bookhand's evaluation and
+review boundary. Bookhand also has a deliberate
 persistent-frame compatibility patch that conflicts with its multi-frame
 continuous-scroll design.
 
@@ -51,7 +54,9 @@ compatibility patch needed to evaluate it. It does not approve production use.
 
 - Confirm current Bookhand baseline
   `johnfactotum/foliate-js@78914aef4466eb960965702401634c2cb348e9b1`.
-- Confirm candidate `readest/foliate-js` commit and its merge base/history.
+- Confirm the selected `jomi-se/foliate-js` commit and its merge base/history;
+  distinguish it from the observed owner-fork HEAD and from its former
+  `readest/foliate-js` source identity.
 - Prefer the existing exact GitHub archive dependency workflow for the first
   spike; do not introduce submodule operations merely because Readest uses one.
 - Capture clean install, lockfile, package contents, build output, bundle-size
@@ -77,7 +82,8 @@ compatibility patch needed to evaluate it. It does not approve production use.
 
 - Production CSP and sandbox block every hostile-EPUB sentinel.
 - Packaged text, CSS, images, SVG, fonts, MathML, captions, and accessible names
-  still render offline while remote resource attempts make zero requests.
+  still render offline. Every attempted off-origin request fails under the
+  enforced policy and zero off-origin response completes.
 - Custom CSS and remaster sanitizer behavior is unchanged.
 - Parser fallbacks do not enable script, forms, nested browsing, bridge access,
   storage access, or remote URLs.
@@ -181,15 +187,17 @@ changed first.
 - Accepting all 212 commits because the aggregate test suite looks mature.
 - Reviewing generated PDF.js churn as if it were authored renderer logic—or
   ignoring its dependency/license impact because it is generated.
-- Using `npm install foliate-js` and assuming it resolves to Readest's fork.
+- Using `npm install foliate-js` and assuming it resolves to the owner fork.
 - Letting an exact-match Bookhand transform degrade into a permissive search and
   replacement when upstream source changes.
 - Calling Playwright device emulation physical Android evidence.
 
 ## Provenance and source pointers
 
-- MIT candidate: `readest/foliate-js@ca3f118269f8d78811ef17a1b147363c321273d7`,
-  `LICENSE`, `package.json`, commit history after `6b11e174`.
+- MIT candidate:
+  `jomi-se/foliate-js@ca3f118269f8d78811ef17a1b147363c321273d7`,
+  formerly the same commit in `readest/foliate-js`; inspect `LICENSE`,
+  `package.json`, and commit history after `6b11e174`.
 - AGPL research baseline: `readest/readest@180795fb4960c32ed11539e6ba70085a5041ecaf`,
   `LICENSE`, `.gitmodules`, reader integration and regression paths.
 - Bookhand baseline: `package.json`, lockfile,
