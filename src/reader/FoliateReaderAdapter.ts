@@ -327,7 +327,7 @@ export class FoliateReaderAdapter implements ReaderAdapter {
   }
 
   async getSectionChunks(sectionIndex: number) {
-    const { view } = this.#requireActive()
+    const { book, view } = this.#requireActive()
     const document = await this.#createSectionDocument(sectionIndex)
     const title = this.#sectionLabel(sectionIndex) ?? `Section ${sectionIndex + 1}`
     const chunks = buildSectionChunks(
@@ -337,17 +337,36 @@ export class FoliateReaderAdapter implements ReaderAdapter {
       (range) => view.getCFI(sectionIndex, range),
     )
     // Do not persist an anchor merely because Foliate emitted it. Resolve it
-    // through a fresh section document and retain only exact round trips.
+    // through a fresh section document and retain only exact round trips. A
+    // terminal semantic object can have useful alternative text but no stable
+    // text endpoint after it (Flatland's final image is one real example).
+    // Equal collapsed endpoints cannot cite its non-empty text; omit only that
+    // known-unresolvable shape so every other mismatch still fails visibly.
+    const stable: (typeof chunks)[number][] = []
+    const validationDocument = await this.#createSectionDocument(sectionIndex)
     for (const chunk of chunks) {
-      const resolved = await this.getPassageAtLocation(chunk.range)
+      if (chunk.range.startCfi === chunk.range.endCfi) continue
+      const start = this.#resolveCfi(book, chunk.range.startCfi, validationDocument, sectionIndex)
+      const end = this.#resolveCfi(book, chunk.range.endCfi, validationDocument, sectionIndex)
+      const range = validationDocument.createRange()
+      range.setStart(start.startContainer, start.startOffset)
+      range.setEnd(end.endContainer, end.endOffset)
+      const resolved = passageFromAnchoredRange(
+        range,
+        sectionIndex,
+        this.#chapterBreadcrumb(sectionIndex),
+        (value) => view.getCFI(sectionIndex, value),
+      )
       if (
-        resolved.range.textFingerprint !== chunk.range.textFingerprint ||
-        !resolved.text.includes(chunk.text)
+        resolved.range.textFingerprint === chunk.range.textFingerprint &&
+        resolved.text.includes(chunk.text)
       ) {
+        stable.push(chunk)
+      } else {
         throw new Error(`Section ${sectionIndex + 1} produced an unstable search anchor.`)
       }
     }
-    return chunks
+    return stable
   }
 
   async navigate(target: BookTarget, navigationId?: number): Promise<void> {

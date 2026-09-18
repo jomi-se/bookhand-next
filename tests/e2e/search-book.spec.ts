@@ -33,9 +33,9 @@ async function currentSection(page: Page): Promise<number | undefined> {
   return structured.readingContext?.sectionIndex
 }
 
-async function openCalculus(page: Page) {
+async function openBook(page: Page, title: string) {
   await page.goto('/')
-  const row = page.locator('.book-open', { hasText: 'Calculus Made Easy' })
+  const row = page.locator('.book-open', { hasText: title })
   await expect(row).toBeVisible({ timeout: 20_000 })
   await row.click()
   await expect(page.locator('.reader')).toBeVisible()
@@ -45,7 +45,7 @@ async function openCalculus(page: Page) {
 }
 
 test('ordinary Search and genuine WebMCP share bounded, non-navigating book retrieval', async ({ page }) => {
-  await openCalculus(page)
+  await openBook(page, 'Calculus Made Easy')
   await page.getByRole('button', { name: 'Search', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Search this book' })).toBeVisible()
   await expect(page.getByLabel('Words or phrase')).toHaveAttribute('maxlength', '300')
@@ -86,4 +86,21 @@ test('ordinary Search and genuine WebMCP share bounded, non-navigating book retr
   expect(expectedSection).toEqual(expect.any(Number))
   await firstHit.click()
   await expect.poll(() => currentSection(page)).toBe(expectedSection)
+})
+
+test('a bundled book becomes searchable automatically after it is opened', async ({ page }) => {
+  await openBook(page, 'Flatland')
+
+  await expect
+    .poll(async () => {
+      const result = await callTool(page, 'search_book', { query: 'Spaceland', limit: 5 })
+      return result.structuredContent?.search
+    }, { timeout: 30_000 })
+    .toMatchObject({
+      availability: expect.stringMatching(/partial|ready/),
+      outcome: 'results',
+      hits: expect.arrayContaining([
+        expect.objectContaining({ text: expect.stringMatching(/Spaceland/i) }),
+      ]),
+    })
 })
