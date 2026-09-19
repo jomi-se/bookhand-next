@@ -93,6 +93,82 @@ async function openFixture(page: Page) {
   })).toBeGreaterThan(20)
 }
 
+async function startSpineTurnPaintProbe(page: Page) {
+  await page.evaluate(() => {
+    const view = document.querySelector('foliate-view') as unknown as {
+      renderer?: HTMLElement & { getContents?: () => { doc: Document }[] }
+    }
+    const renderer = view.renderer
+    if (!renderer) throw new Error('Foliate renderer is unavailable')
+    const probe = {
+      blankFrames: [] as number[],
+      compositorTransforms: [] as string[],
+      until: performance.now() + 700,
+    }
+    ;(window as unknown as { __bookhandTurnProbe: typeof probe }).__bookhandTurnProbe = probe
+
+    const hasVisibleBookText = () => {
+      const content = renderer.getContents?.()[0]
+      const doc = content?.doc
+      const frame = doc?.defaultView?.frameElement
+      if (!doc?.body || !(frame instanceof HTMLIFrameElement)) return false
+      const frameRect = frame.getBoundingClientRect()
+      if (
+        frameRect.right <= 0
+        || frameRect.bottom <= 0
+        || frameRect.left >= window.innerWidth
+        || frameRect.top >= window.innerHeight
+      ) return false
+      for (let node: Element | null = frame; node; node = node.parentElement) {
+        const style = getComputedStyle(node)
+        if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) {
+          return false
+        }
+      }
+      const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          return node.textContent?.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP
+        },
+      })
+      for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+        const range = doc.createRange()
+        range.selectNodeContents(text)
+        if (Array.from(range.getClientRects()).some((rect) =>
+          rect.width > 0
+          && rect.height > 0
+          && rect.right > 0
+          && rect.bottom > 0
+          && rect.left < frame.clientWidth
+          && rect.top < frame.clientHeight)) return true
+      }
+      return false
+    }
+
+    const sample = () => {
+      const snapshotActive = document.documentElement.classList.contains('bookhand-spine-turn')
+      const snapshotTransforms = document.getAnimations()
+        .map((animation) => animation.effect)
+        .filter((effect): effect is KeyframeEffect => effect instanceof KeyframeEffect)
+        .filter((effect) => effect.pseudoElement?.includes('bookhand-spine-turn'))
+        .map((effect) => getComputedStyle(document.documentElement, effect.pseudoElement!).transform)
+        .filter((transform) => transform !== 'none')
+      probe.compositorTransforms.push(...snapshotTransforms)
+      if (!hasVisibleBookText() && !snapshotActive) {
+        probe.blankFrames.push(Math.round(performance.now()))
+      }
+      if (performance.now() < probe.until) requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+  })
+}
+
+async function readSpineTurnPaintProbe(page: Page) {
+  await page.waitForTimeout(700)
+  return page.evaluate(() => (window as unknown as {
+    __bookhandTurnProbe: { blankFrames: number[]; compositorTransforms: string[] }
+  }).__bookhandTurnProbe)
+}
+
 function flattenToc(
   items: readonly { label: string; href?: string; children: readonly unknown[] }[],
 ): { label: string; href?: string; children: readonly unknown[] }[] {
@@ -280,7 +356,7 @@ test('a cross-section link to an empty fragment reveals the following passage', 
   }).toContain('Empty fragment destination passage.')
 })
 
-test('the normal next-page control visibly animates across a spine boundary', async ({ page }) => {
+test('the normal page controls keep a painted page moving across a spine boundary', async ({ page }) => {
   await openFixture(page)
   await page.evaluate(() => {
     const view = document.querySelector('foliate-view') as unknown as {
@@ -292,15 +368,9 @@ test('the normal next-page control visibly animates across a spine boundary', as
       | null
     if (!renderer || !frameWindow) throw new Error('Foliate renderer is unavailable')
     frameWindow.__bookhandAnimatedFrame = 'retained-animated-frame'
-    const probe = { left: [] as number[], until: performance.now() + 700 }
-    ;(window as unknown as { __bookhandTurnProbe: typeof probe }).__bookhandTurnProbe = probe
-    const sample = () => {
-      probe.left.push(renderer.getBoundingClientRect().left)
-      if (performance.now() < probe.until) requestAnimationFrame(sample)
-    }
-    requestAnimationFrame(sample)
   })
 
+  await startSpineTurnPaintProbe(page)
   await page.getByRole('button', { name: 'Next page' }).click()
   await expect.poll(() => page.evaluate(() => {
     const view = document.querySelector('foliate-view') as unknown as {
@@ -308,7 +378,21 @@ test('the normal next-page control visibly animates across a spine boundary', as
     }
     return view.renderer?.getContents?.()[0]?.doc.body?.textContent ?? ''
   })).toContain('Vertical writing section')
-  await page.waitForTimeout(700)
+  const forward = await readSpineTurnPaintProbe(page)
+  expect(forward.blankFrames).toEqual([])
+  expect(forward.compositorTransforms.length).toBeGreaterThan(1)
+
+  await startSpineTurnPaintProbe(page)
+  await page.getByRole('button', { name: 'Previous page' }).click()
+  await expect.poll(() => page.evaluate(() => {
+    const view = document.querySelector('foliate-view') as unknown as {
+      renderer?: { getContents?: () => { doc: Document }[] }
+    }
+    return view.renderer?.getContents?.()[0]?.doc.body?.textContent ?? ''
+  })).toContain('First horizontal section')
+  const backward = await readSpineTurnPaintProbe(page)
+  expect(backward.blankFrames).toEqual([])
+  expect(backward.compositorTransforms.length).toBeGreaterThan(1)
 
   const result = await page.evaluate(() => {
     const view = document.querySelector('foliate-view') as unknown as {
@@ -317,15 +401,10 @@ test('the normal next-page control visibly animates across a spine boundary', as
     const frameWindow = view.renderer?.getContents?.()[0]?.doc.defaultView as
       | (Window & { __bookhandAnimatedFrame?: string })
       | null
-    const positions = (window as unknown as {
-      __bookhandTurnProbe: { left: number[] }
-    }).__bookhandTurnProbe.left
     return {
-      movement: Math.max(...positions) - Math.min(...positions),
       marker: frameWindow?.__bookhandAnimatedFrame ?? '',
     }
   })
-  expect(result.movement).toBeGreaterThan(100)
   expect(result.marker).toBe('retained-animated-frame')
 })
 

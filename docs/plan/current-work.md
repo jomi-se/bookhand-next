@@ -22,10 +22,24 @@ CFI, annotation, and search boundaries remain mandatory.
 Deterministic fragment and animation regressions, the full RE-001 compatibility
 file, adapter tests, typecheck, and production build are green. License
 accounting now distinguishes the pinned fork, its generated vendor assets, and
-the direct stylesheet polyfill. The remaining adoption gate is full repository
-verification followed by genuine Windows in-app-browser validation of the
-exact committed production asset. Only a green verdict may fast-forward local
-`main`; no remote push is authorized. RE-002 remains paused.
+the direct stylesheet polyfill.
+
+Windows validation of the first adoption commit found that its custom
+cross-spine animation translated the sole retained iframe completely offscreen
+before replacing its document. Navigation and frame identity stayed correct,
+but the uncovered reader background produced a visible blank interval. The
+follow-up regression samples every animation frame through the native reader
+controls and fails if neither visible book text nor a browser-owned transition
+snapshot covers the reader; it also requires compositor transforms and retained
+frame identity in both directions. The repair keeps the old page painted as a
+document-transition snapshot while the same iframe loads its next section, then
+slides that snapshot over the ready destination. Reduced-motion and browsers
+without the transition API retain an immediate, navigation-first fallback.
+
+The remaining adoption gate is full repository verification followed by a new
+genuine Windows in-app-browser validation of the exact committed production
+asset. Only a green verdict may fast-forward local `main`; no remote push is
+authorized. RE-002 remains paused.
 
 ## Pending: infer the connection experience from the provider address
 

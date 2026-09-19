@@ -118,6 +118,7 @@ afterEach(() => {
   vi.useRealTimers()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  Reflect.deleteProperty(document, 'startViewTransition')
   document.body.replaceChildren()
 })
 
@@ -154,8 +155,22 @@ describe('FoliateReaderAdapter', () => {
     expect(relocations.at(-1)).toEqual({ sectionIndex: 1 })
   })
 
-  it('animates only the relative turn that crosses a section boundary', async () => {
+  it('keeps the retained page painted with a document transition at a section boundary', async () => {
     vi.spyOn(document, 'hidden', 'get').mockReturnValue(false)
+    const startViewTransition = vi.fn((update: () => void | Promise<void>) => {
+      const updateCallbackDone = Promise.resolve().then(update)
+      return {
+        ready: Promise.resolve(),
+        updateCallbackDone,
+        finished: updateCallbackDone.then(() => undefined),
+        skipTransition: vi.fn(),
+        types: new Set<string>(),
+      } as unknown as ViewTransition
+    })
+    Object.defineProperty(document, 'startViewTransition', {
+      configurable: true,
+      value: startViewTransition,
+    })
     const adapter = makeAdapter(document.createElement('div'))
     await adapter.open(new Blob(['fixture']))
     const view = document.querySelector('foliate-view') as FakeFoliateView
@@ -166,27 +181,19 @@ describe('FoliateReaderAdapter', () => {
       atStart: { configurable: true, get: () => false },
       atEnd: { configurable: true, get: () => false },
     })
-    vi.spyOn(renderer, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 600, 800))
-    const animations: { finished: Promise<void>; cancel: ReturnType<typeof vi.fn> }[] = []
-    renderer.animate = vi.fn(() => {
-      const animation = { finished: Promise.resolve(), cancel: vi.fn() }
-      animations.push(animation)
-      return animation as unknown as Animation
-    })
 
     await adapter.navigate({ kind: 'relative', direction: 'next' })
 
-    expect(renderer.animate).toHaveBeenCalledTimes(2)
-    expect(renderer.animate).toHaveBeenNthCalledWith(
-      1,
-      [{ transform: 'translateX(0)' }, { transform: 'translateX(-600px)' }],
-      expect.objectContaining({ duration: 150, fill: 'forwards' }),
-    )
-    expect(animations.every((animation) => animation.cancel.mock.calls.length > 0)).toBe(true)
+    expect(startViewTransition).toHaveBeenCalledOnce()
+    expect(view.style.viewTransitionName).toBe('')
+    expect(document.documentElement).not.toHaveClass('bookhand-spine-turn')
+    expect(adapter.getLocation().sectionIndex).toBe(1)
 
-    renderer.animate = vi.fn(() => { throw new Error('animation unavailable') })
+    startViewTransition.mockImplementationOnce(() => { throw new Error('transition unavailable') })
     await expect(adapter.navigate({ kind: 'relative', direction: 'previous' })).resolves.toBeUndefined()
     expect(adapter.getLocation().sectionIndex).toBe(0)
+    expect(view.style.viewTransitionName).toBe('')
+    expect(document.documentElement).not.toHaveClass('bookhand-spine-turn')
   })
 
   it('does not publish a retired relocation as the adapter location', async () => {

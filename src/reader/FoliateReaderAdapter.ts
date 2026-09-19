@@ -1705,7 +1705,7 @@ function crossesSectionBoundary(
   if (
     !renderer.hasAttribute('animated')
     || renderer.hasAttribute('eink')
-    || typeof renderer.animate !== 'function'
+    || typeof document.startViewTransition !== 'function'
     || document.hidden
     || typeof renderer.page !== 'number'
     || typeof renderer.pages !== 'number'
@@ -1722,49 +1722,42 @@ async function animateSectionBoundaryTurn(
   const renderer = view.renderer
   const documentDirection = renderer.getContents()[0]?.doc.documentElement.dir
   const forward = direction === 'next'
-  const exitSign = (documentDirection === 'rtl' ? 1 : -1) * (forward ? 1 : -1)
-  const width = Math.max(1, renderer.getBoundingClientRect().width)
-  let exit: Animation | undefined
+  const movesRight = (documentDirection === 'rtl') === forward
+  const root = document.documentElement
+  const page = view as unknown as HTMLElement
+  const classes = [
+    'bookhand-spine-turn',
+    forward ? 'bookhand-spine-turn-forward' : 'bookhand-spine-turn-backward',
+    movesRight ? 'bookhand-spine-turn-right' : 'bookhand-spine-turn-left',
+  ]
+  const bookDocument = renderer.getContents()[0]?.doc
+  const background = bookDocument?.documentElement
+    ? bookDocument.defaultView?.getComputedStyle(bookDocument.documentElement)
+      .getPropertyValue('--theme-bg-color').trim()
+    : ''
+
+  page.style.viewTransitionName = 'bookhand-spine-turn'
+  root.style.setProperty('--bookhand-spine-turn-background', background || 'Canvas')
+  root.classList.add(...classes)
+  const cleanup = () => {
+    root.classList.remove(...classes)
+    root.style.removeProperty('--bookhand-spine-turn-background')
+    page.style.removeProperty('view-transition-name')
+  }
+
+  let transition: ViewTransition
   try {
-    exit = renderer.animate(
-      [
-        { transform: 'translateX(0)' },
-        { transform: `translateX(${exitSign * width}px)` },
-      ],
-      { duration: 150, easing: 'cubic-bezier(0.55, 0, 1, 0.45)', fill: 'forwards' },
-    )
-    await exit.finished
+    transition = document.startViewTransition(() => turn())
   } catch {
-    exit?.cancel()
+    cleanup()
     await turn()
     return
   }
-  const loadController = new AbortController()
-  const loaded = new Promise<void>((resolve) => {
-    view.addEventListener('load', () => resolve(), { once: true, signal: loadController.signal })
-  })
-  let incoming: Animation | undefined
   try {
-    const navigation = turn()
-    await Promise.race([loaded, navigation])
-    try {
-      incoming = renderer.animate(
-        [
-          { transform: `translateX(${-exitSign * width}px)` },
-          { transform: 'translateX(0)' },
-        ],
-        { duration: 150, easing: 'cubic-bezier(0, 0.55, 0.45, 1)', fill: 'both' },
-      )
-    } catch {
-      await navigation
-      return
-    }
-    exit.cancel()
-    await Promise.all([navigation, incoming.finished.catch(() => undefined)])
+    await transition.updateCallbackDone
+    await transition.finished.catch(() => undefined)
   } finally {
-    loadController.abort()
-    incoming?.cancel()
-    exit.cancel()
+    cleanup()
   }
 }
 

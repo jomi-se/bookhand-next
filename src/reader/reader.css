@@ -426,11 +426,9 @@
   min-inline-size: 0;
   min-block-size: 0;
   block-size: 100%;
-  /* Foliate destroys and rebuilds the section iframe at every chapter, so for
-     a frame or two there is nothing to paint. Painting the theme's own canvas
-     underneath makes that gap the colour of the page instead of a flash of
-     white. `contain` keeps the rebuild's own reflow from being attributed to
-     the rest of the app. */
+  /* Painting the theme's own canvas beneath the retained iframe keeps its
+     in-place document replacement visually coherent. `contain` keeps the
+     section reflow from being attributed to the rest of the app. */
   background: var(--canvas);
   contain: layout paint;
 }
@@ -438,6 +436,50 @@
 .reader-surface foliate-view {
   display: block;
   block-size: 100%;
+}
+
+/* A retained iframe cannot slide away while loading its next spine item
+   without exposing an empty reader. The document transition keeps a painted
+   snapshot of the old page above the newly loaded page, then moves that
+   snapshot away. */
+html.bookhand-spine-turn::view-transition-old(root),
+html.bookhand-spine-turn::view-transition-new(root) {
+  animation: none;
+}
+
+html.bookhand-spine-turn::view-transition-old(bookhand-spine-turn),
+html.bookhand-spine-turn::view-transition-new(bookhand-spine-turn) {
+  animation: none;
+  background: var(--bookhand-spine-turn-background, Canvas);
+  mix-blend-mode: normal;
+}
+
+html.bookhand-spine-turn-forward::view-transition-old(bookhand-spine-turn) {
+  z-index: 1;
+  animation: bookhand-spine-turn-left 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  box-shadow: 0 0 24px rgb(0 0 0 / 35%);
+}
+
+html.bookhand-spine-turn-forward.bookhand-spine-turn-right::view-transition-old(bookhand-spine-turn) {
+  animation-name: bookhand-spine-turn-right;
+}
+
+html.bookhand-spine-turn-backward::view-transition-new(bookhand-spine-turn) {
+  z-index: 1;
+  animation: bookhand-spine-turn-left 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both reverse;
+  box-shadow: 0 0 24px rgb(0 0 0 / 35%);
+}
+
+html.bookhand-spine-turn-backward.bookhand-spine-turn-right::view-transition-new(bookhand-spine-turn) {
+  animation-name: bookhand-spine-turn-right;
+}
+
+@keyframes bookhand-spine-turn-left {
+  to { transform: translateX(-100%); }
+}
+
+@keyframes bookhand-spine-turn-right {
+  to { transform: translateX(100%); }
 }
 
 .page-step {
