@@ -38,7 +38,7 @@
     "foliate-js": "https://github.com/jomi-se/foliate-js/archive/ca3f118269f8d78811ef17a1b147363c321273d7.tar.gz",
     "lucide-react": "^1.39.0",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
+    "react-dom": "^19.3.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
@@ -48,7 +48,7 @@
     "@testing-library/user-event": "^14.6.6",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.0",
     "@vitest/coverage-v8": "^4.1.11",
     "fflate": "^0.8.3",
