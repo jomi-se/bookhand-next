@@ -1,18 +1,18 @@
 # Current work
 
-Documentation triage updated: 2026-09-14.
+Documentation triage updated: 2026-09-19.
 
-## Active: RE-001 owner-fork adoption gate
+## Completed: RE-001 owner-fork adoption
 
 The compatibility spike completed with a `compatible with bounded Bookhand
-patches` outcome, and the owner authorized a clean adoption branch from current
-`main`. `feat/foliate-fork-adoption` pins the exact MIT owner-fork archive
+patches` outcome, and the owner authorized adoption after the deterministic and
+controlled-browser gates passed. `main` pins the exact MIT owner-fork archive
 `jomi-se/foliate-js@ca3f118269f8d78811ef17a1b147363c321273d7` behind the
 existing `ReaderAdapter`; it does not import or depend on the AGPL Readest
 application.
 
-The candidate preserves ADR 0005's one same-origin iframe and fail-closed
-source transform. The adoption branch also carries two independently authored
+The adopted integration preserves ADR 0005's one same-origin iframe and
+fail-closed source transform. It also carries two independently authored
 Bookhand repairs found during owner validation: fragment links whose publisher
 marker has no rendered box measure the first following visible text, and a
 normal page turn across a spine boundary gets the same visible motion contract
@@ -36,10 +36,14 @@ document-transition snapshot while the same iframe loads its next section, then
 slides that snapshot over the ready destination. Reduced-motion and browsers
 without the transition API retain an immediate, navigation-first fallback.
 
-The remaining adoption gate is full repository verification followed by a new
-genuine Windows in-app-browser validation of the exact committed production
-asset. Only a green verdict may fast-forward local `main`; no remote push is
-authorized. RE-002 remains paused.
+Full repository verification passed: lint, typecheck, 577 unit tests,
+production build and bundle checks, SDK packaging, CSP verification, setup
+verification, and the 52-test browser suite. Genuine Windows in-app-browser
+validation then passed on exact commit `fc8e0cd`: forward and reverse native
+button turns across Relativity sections 42 and 43 kept continuously painted,
+visibly sliding pages, settled at the correct chapters, retained the reader
+frame, and preserved `get_reading_context`. Local `main` was fast-forwarded to
+that commit. No remote push was performed. RE-002 remains paused.
 
 ## Pending: infer the connection experience from the provider address
 

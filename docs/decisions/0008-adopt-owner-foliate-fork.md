@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed on 2026-09-19, pending exact-asset Windows validation and local merge.
+Accepted on 2026-09-19 after exact-asset Windows validation and local merge.
 
 ## Context
 
@@ -19,8 +19,8 @@ transform. No Readest application source is part of this decision.
 
 ## Decision
 
-Adopt that exact owner-fork archive behind `ReaderAdapter` after the final
-controlled-browser gate passes. Keep dependency updates explicit and pinned.
+Adopt that exact owner-fork archive behind `ReaderAdapter`. Keep dependency
+updates explicit and pinned.
 Continue to own the following compatibility behavior in Bookhand:
 
 - ADR 0005's retained same-origin iframe and blocked publisher scripts;
@@ -43,5 +43,5 @@ remain outside Bookhand's current product surface.
   transform re-derivation, and controlled-browser proof required by ADR 0005.
 - The dependency and its bundled vendor assets retain their own licenses as
   recorded in `THIRD_PARTY_NOTICES.md`.
-- If the final exact-asset Windows gate fails, this ADR remains proposed and
-  `main` stays on the previous pin.
+- Future pin updates remain gated on exact-asset controlled-browser validation;
+  deterministic browser tests do not replace that evidence.
