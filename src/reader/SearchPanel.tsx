@@ -76,7 +76,11 @@ export function SearchPanel(props: {
           <ol className="search-results">
             {result.hits.map((hit) => (
               <li key={hit.id}>
-                <button type="button" onClick={() => props.onActivate(hit)}>
+                <button
+                  type="button"
+                  data-section-index={hit.sectionIndex}
+                  onClick={() => props.onActivate(hit)}
+                >
                   <span>{hit.sectionTitle}</span>
                   <q>{hit.text}</q>
                 </button>

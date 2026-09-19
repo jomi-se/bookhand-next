@@ -96,6 +96,9 @@ function testControlBoundary(mode: string): Plugin {
 // Pages project site, without any path being hard-coded in the application.
 export default defineConfig(({ mode }) => ({
   base: process.env.BOOKHAND_BASE ?? '/',
+  // This static deep import would otherwise be pre-bundled before the
+  // fail-closed persistent-document lifetime transform can inspect it.
+  optimizeDeps: { exclude: ['foliate-js/view.js'] },
   plugins: [
     foliatePersistentFrame(),
     react(),

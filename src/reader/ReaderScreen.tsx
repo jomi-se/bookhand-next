@@ -96,6 +96,7 @@ export function ReaderScreen({
   // and close the study board, and the person can do the same, and neither may
   // act on a copy the other has already moved past. `VAL-BOARD-VIEW-PARITY`.
   const bookHost = useRef<HTMLDivElement>(null)
+  const readerInteractionEpoch = useRef(0)
   const panelInvoker = useRef<HTMLElement | null>(null)
   const [surfaceState, setSurfaceState] = useState(surface.state)
   useEffect(() => surface.subscribe(setSurfaceState), [surface])
@@ -284,6 +285,40 @@ export function ReaderScreen({
     [chrome, reader],
   )
 
+  const navigateFromReaderChrome = useCallback(
+    (direction: 'previous' | 'next', control: HTMLElement | null) => {
+      if (!control) {
+        void reader.navigate({ kind: 'relative', direction })
+        chrome.show()
+        return
+      }
+      const shouldRestoreFocus = document.activeElement === control
+      const interactionEpoch = readerInteractionEpoch.current
+      const restoreFocus = () => {
+        if (
+          !shouldRestoreFocus ||
+          !control.isConnected ||
+          readerInteractionEpoch.current !== interactionEpoch
+        ) return
+        const active = document.activeElement
+        if (
+          active === control ||
+          active === document.body ||
+          (active instanceof Node && bookHost.current?.contains(active))
+        ) {
+          control.focus({ preventScroll: true })
+        }
+      }
+      // Foliate focuses the destination heading when a page control crosses a
+      // section boundary. Put focus back on the control that initiated the
+      // turn, unless the person deliberately moved it somewhere else while
+      // the asynchronous navigation was settling.
+      void reader.navigate({ kind: 'relative', direction }).then(restoreFocus, restoreFocus)
+      chrome.show()
+    },
+    [chrome, reader],
+  )
+
   const closePanel = useCallback(() => {
     surface.setPanel(null)
     const invoker = panelInvoker.current
@@ -323,16 +358,22 @@ export function ReaderScreen({
       if (panel) return
       if (event.key === 'ArrowRight' || event.key === 'PageDown') {
         event.preventDefault()
-        void reader.navigate({ kind: 'relative', direction: 'next' })
+        navigateFromReaderChrome(
+          'next',
+          document.activeElement instanceof HTMLElement ? document.activeElement : null,
+        )
       }
       if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
         event.preventDefault()
-        void reader.navigate({ kind: 'relative', direction: 'previous' })
+        navigateFromReaderChrome(
+          'previous',
+          document.activeElement instanceof HTMLElement ? document.activeElement : null,
+        )
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [closePanel, panel, reader])
+  }, [closePanel, navigateFromReaderChrome, panel])
 
   const percent =
     reader.location === undefined ? undefined : Math.round(reader.location.fraction * 100)
@@ -649,11 +690,10 @@ export function ReaderScreen({
             type="button"
             className="page-step page-previous"
             aria-label="Previous page"
-            onClick={() => {
-              void reader.navigate({ kind: 'relative', direction: 'previous' })
+            onClick={(event) => {
+              navigateFromReaderChrome('previous', event.currentTarget)
               // The person is using a control, so the chrome stays and the
               // countdown restarts; focus is left on the button they pressed.
-              chrome.show()
             }}
           >
             <ChevronLeft size={20} aria-hidden="true" />
@@ -671,6 +711,10 @@ export function ReaderScreen({
               onSelectionChange: reader.onSelectionChange,
               onSectionError: reader.onSectionError,
               onTap: onBookTap,
+              onKeyboardActivity: chrome.show,
+              onReaderInteraction: () => {
+                readerInteractionEpoch.current += 1
+              },
             })}
           />
 
@@ -678,10 +722,7 @@ export function ReaderScreen({
             type="button"
             className="page-step page-next"
             aria-label="Next page"
-            onClick={() => {
-              void reader.navigate({ kind: 'relative', direction: 'next' })
-              chrome.show()
-            }}
+            onClick={(event) => navigateFromReaderChrome('next', event.currentTarget)}
           >
             <ChevronRight size={20} aria-hidden="true" />
           </button>

@@ -2,20 +2,30 @@
 
 Documentation triage updated: 2026-09-14.
 
-## Active: RE-001 pinned Foliate fork compatibility spike
+## Active: RE-001 owner-fork adoption gate
 
-The owner selected RE-001 for a disposable, evidence-first evaluation of the
-exact MIT fork candidate behind `ReaderAdapter`. This is not production
-adoption. The [live progress ledger](re-001-foliate-fork-progress.md) is the
-resumption source and is updated at every planning revision, worker handoff,
-root review, validator verdict, and gate. The
-[mission](re-001-foliate-fork-compatibility-spike.md),
-[inventory](re-001-foliate-fork-inventory.md), contracts, and
-[provisional topology](re-001-foliate-fork-build-tasks.md) passed through two
-clean-context contract reviews; their substantive findings were incorporated.
-The review loop is now closed to keep this disposable spike proportionate, and
-the live ledger records the remaining evidence limits. No candidate dependency
-change has been made on `main`; W1 is the next action.
+The compatibility spike completed with a `compatible with bounded Bookhand
+patches` outcome, and the owner authorized a clean adoption branch from current
+`main`. `feat/foliate-fork-adoption` pins the exact MIT owner-fork archive
+`jomi-se/foliate-js@ca3f118269f8d78811ef17a1b147363c321273d7` behind the
+existing `ReaderAdapter`; it does not import or depend on the AGPL Readest
+application.
+
+The candidate preserves ADR 0005's one same-origin iframe and fail-closed
+source transform. The adoption branch also carries two independently authored
+Bookhand repairs found during owner validation: fragment links whose publisher
+marker has no rendered box measure the first following visible text, and a
+normal page turn across a spine boundary gets the same visible motion contract
+as an in-section turn. The retained Window, CSP, script blocking, remaster,
+CFI, annotation, and search boundaries remain mandatory.
+
+Deterministic fragment and animation regressions, the full RE-001 compatibility
+file, adapter tests, typecheck, and production build are green. License
+accounting now distinguishes the pinned fork, its generated vendor assets, and
+the direct stylesheet polyfill. The remaining adoption gate is full repository
+verification followed by genuine Windows in-app-browser validation of the
+exact committed production asset. Only a green verdict may fast-forward local
+`main`; no remote push is authorized. RE-002 remains paused.
 
 ## Pending: infer the connection experience from the provider address
 

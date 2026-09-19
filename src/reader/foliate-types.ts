@@ -59,6 +59,10 @@ export interface FoliateRelocation {
 }
 
 export interface FoliateRenderer extends HTMLElement {
+  readonly page?: number
+  readonly pages?: number
+  readonly atStart?: boolean
+  readonly atEnd?: boolean
   goTo(target: FoliateResolvedTarget): Promise<void>
   prev(distance?: number): Promise<void>
   next(distance?: number): Promise<void>

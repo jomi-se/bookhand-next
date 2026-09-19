@@ -20,6 +20,8 @@ const FORWARDED: { readonly [K in keyof Required<ReaderAdapterEvents>]: true } =
   onSectionError: true,
   onAnnotationActivate: true,
   onTap: true,
+  onKeyboardActivity: true,
+  onReaderInteraction: true,
   onNavigationIntent: true,
   onNavigationRequest: true,
 }

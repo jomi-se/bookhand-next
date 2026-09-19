@@ -154,6 +154,41 @@ describe('FoliateReaderAdapter', () => {
     expect(relocations.at(-1)).toEqual({ sectionIndex: 1 })
   })
 
+  it('animates only the relative turn that crosses a section boundary', async () => {
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(false)
+    const adapter = makeAdapter(document.createElement('div'))
+    await adapter.open(new Blob(['fixture']))
+    const view = document.querySelector('foliate-view') as FakeFoliateView
+    const renderer = view.renderer
+    Object.defineProperties(renderer, {
+      page: { configurable: true, get: () => 0 },
+      pages: { configurable: true, get: () => 1 },
+      atStart: { configurable: true, get: () => false },
+      atEnd: { configurable: true, get: () => false },
+    })
+    vi.spyOn(renderer, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 600, 800))
+    const animations: { finished: Promise<void>; cancel: ReturnType<typeof vi.fn> }[] = []
+    renderer.animate = vi.fn(() => {
+      const animation = { finished: Promise.resolve(), cancel: vi.fn() }
+      animations.push(animation)
+      return animation as unknown as Animation
+    })
+
+    await adapter.navigate({ kind: 'relative', direction: 'next' })
+
+    expect(renderer.animate).toHaveBeenCalledTimes(2)
+    expect(renderer.animate).toHaveBeenNthCalledWith(
+      1,
+      [{ transform: 'translateX(0)' }, { transform: 'translateX(-600px)' }],
+      expect.objectContaining({ duration: 150, fill: 'forwards' }),
+    )
+    expect(animations.every((animation) => animation.cancel.mock.calls.length > 0)).toBe(true)
+
+    renderer.animate = vi.fn(() => { throw new Error('animation unavailable') })
+    await expect(adapter.navigate({ kind: 'relative', direction: 'previous' })).resolves.toBeUndefined()
+    expect(adapter.getLocation().sectionIndex).toBe(0)
+  })
+
   it('does not publish a retired relocation as the adapter location', async () => {
     const adapter = makeAdapter(document.createElement('div'), {
       onLocationChange: (_location, navigationId) => navigationId !== 41,
@@ -621,6 +656,18 @@ describe('FoliateReaderAdapter', () => {
     })
     doc.dispatchEvent(move)
     expect(onNavigationIntent).toHaveBeenCalledTimes(2)
+  })
+
+  it('forwards keyboard activity from the EPUB frame to the host', async () => {
+    const host = document.createElement('div')
+    const onKeyboardActivity = vi.fn()
+    const adapter = makeAdapter(host, { onKeyboardActivity })
+    await adapter.open(new Blob(['fixture']))
+    const view = host.querySelector('foliate-view') as unknown as FakeFoliateView
+
+    view.renderer.getContents()[0]!.doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift' }))
+
+    expect(onKeyboardActivity).toHaveBeenCalledOnce()
   })
 
   it('keeps the verified tutor overlay in a namespace durable annotation rerenders cannot clear', async () => {

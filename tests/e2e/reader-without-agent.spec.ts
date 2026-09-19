@@ -60,6 +60,7 @@ test('desktop reading controls stay visible and keyboard paging survives focused
   await expect.poll(fraction).toBeGreaterThan(afterClick)
   await page.waitForTimeout(500)
   const afterArrow = await fraction()
+  await expect(next).toBeFocused()
 
   await page.keyboard.press('ArrowLeft')
   await expect.poll(fraction).toBeLessThan(afterArrow)

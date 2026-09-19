@@ -91,6 +91,10 @@ export interface ReaderAdapterEvents {
    * means, so the reading surface stays free of policy.
    */
   readonly onTap?: (zone: TapZone) => void
+  /** Keyboard activity inside the EPUB frame should wake host reader chrome. */
+  readonly onKeyboardActivity?: () => void
+  /** Trusted learner input inside the EPUB frame, distinct from renderer-driven focus. */
+  readonly onReaderInteraction?: () => void
   /** Fired before Foliate handles a swipe or an in-book link. */
   readonly onNavigationIntent?: () => void
   /** Routes in-book links through the same serialized learner navigation path. */
@@ -288,7 +292,7 @@ export class FoliateReaderAdapter implements ReaderAdapter {
 
   async getPassageAtLocation(range: BookRange): Promise<Passage> {
     const { book, view } = this.#requireActive()
-    const document = await this.#createSectionDocument(range.sectionIndex)
+    const document = await this.#createSectionDocument(range.sectionIndex, 'displayed')
     const start = this.#resolveCfi(book, range.startCfi, document, range.sectionIndex)
     const end = this.#resolveCfi(book, range.endCfi, document, range.sectionIndex)
     const resolved = document.createRange()
@@ -308,7 +312,7 @@ export class FoliateReaderAdapter implements ReaderAdapter {
 
   async getSectionSnapshot(sectionIndex: number): Promise<BookSectionSnapshot> {
     const { view } = this.#requireActive()
-    const document = await this.#createSectionDocument(sectionIndex)
+    const document = await this.#createSectionDocument(sectionIndex, 'displayed')
     const text = extractDocumentText(document)
     const body = document.body ?? document.documentElement
     const range = document.createRange()
@@ -344,8 +348,11 @@ export class FoliateReaderAdapter implements ReaderAdapter {
     // known-unresolvable shape so every other mismatch still fails visibly.
     const stable: (typeof chunks)[number][] = []
     const validationDocument = await this.#createSectionDocument(sectionIndex)
-    for (const chunk of chunks) {
-      if (chunk.range.startCfi === chunk.range.endCfi) continue
+    for (const [index, chunk] of chunks.entries()) {
+      if (chunk.range.startCfi === chunk.range.endCfi) {
+        if (index === chunks.length - 1) continue
+        throw new Error(`Section ${sectionIndex + 1} produced an unstable search anchor.`)
+      }
       const start = this.#resolveCfi(book, chunk.range.startCfi, validationDocument, sectionIndex)
       const end = this.#resolveCfi(book, chunk.range.endCfi, validationDocument, sectionIndex)
       const range = validationDocument.createRange()
@@ -424,9 +431,14 @@ export class FoliateReaderAdapter implements ReaderAdapter {
 
   async #navigateActive(active: ActiveReader, target: BookTarget): Promise<void> {
     if (target.kind === 'relative') {
-      await (target.direction === 'previous'
+      const turn = () => target.direction === 'previous'
         ? active.view.renderer.prev()
-        : active.view.renderer.next())
+        : active.view.renderer.next()
+      if (crossesSectionBoundary(active.view, target.direction)) {
+        await animateSectionBoundaryTurn(active.view, target.direction, turn)
+      } else {
+        await turn()
+      }
       return
     }
 
@@ -519,12 +531,13 @@ export class FoliateReaderAdapter implements ReaderAdapter {
     // and no page-turn animation at all. On a phone that spent 96px of a 839px
     // screen on nothing, and made every turn snap without transition, which
     // reads as unresponsive rather than fast.
-    const cleanups = [...this.#listen(view), configureForViewport(view, () => this.#style.pageLayout ?? 'auto')]
+    const cleanups = [...this.#listen(view)]
     this.#active = { book, view, cleanups, transformCleanup: uninstallTransform }
     this.#host.replaceChildren(view)
     try {
       await view.open(book)
       this.#assertCurrent(revision)
+      cleanups.push(configureForViewport(view, () => this.#style.pageLayout ?? 'auto'))
       cleanups.push(this.#listenForRendererRelocations(view))
       this.#toc = mapToc(book.toc ?? [])
       this.#sections = mapSections(book.sections, this.#toc)
@@ -680,16 +693,27 @@ export class FoliateReaderAdapter implements ReaderAdapter {
     const onCancel = () => {
       start = undefined
     }
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.isTrusted) this.#options.onReaderInteraction?.()
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.isTrusted) this.#options.onReaderInteraction?.()
+      this.#options.onKeyboardActivity?.()
+    }
 
+    doc.addEventListener('pointerdown', onPointerDown, { capture: true })
     doc.addEventListener('touchstart', onStart, { capture: true, passive: true })
     doc.addEventListener('touchend', onEnd, { capture: true })
     doc.addEventListener('touchmove', onMove, { capture: true, passive: true })
     doc.addEventListener('touchcancel', onCancel, { capture: true, passive: true })
+    doc.addEventListener('keydown', onKeyDown, { capture: true })
     return [
+      () => doc.removeEventListener('pointerdown', onPointerDown, { capture: true }),
       () => doc.removeEventListener('touchstart', onStart, { capture: true }),
       () => doc.removeEventListener('touchend', onEnd, { capture: true }),
       () => doc.removeEventListener('touchmove', onMove, { capture: true }),
       () => doc.removeEventListener('touchcancel', onCancel, { capture: true }),
+      () => doc.removeEventListener('keydown', onKeyDown, { capture: true }),
     ]
   }
 
@@ -1362,7 +1386,10 @@ export class FoliateReaderAdapter implements ReaderAdapter {
     return create
   }
 
-  async #createSectionDocument(sectionIndex: number): Promise<Document> {
+  async #createSectionDocument(
+    sectionIndex: number,
+    sourcePolicy: 'displayed' | 'latest-rewrite' = 'latest-rewrite',
+  ): Promise<Document> {
     const { book } = this.#requireActive()
     if (!this.#isValidSection(sectionIndex)) throw new ReaderSectionLoadError(sectionIndex)
     try {
@@ -1370,11 +1397,12 @@ export class FoliateReaderAdapter implements ReaderAdapter {
       const create = book.sections[sectionIndex]?.createDocument
       if (!create) throw new Error('The EPUB section has no document source')
       const document = await create()
-      // Extraction reads the rewritten document whenever one exists, so what
-      // Bookhand indexes and what the reader sees stay the same book. Foliate
-      // reaches a section two different ways — the loader for rendering and
-      // `createDocument` for extraction — and neither knows about the other.
-      const version = currentVersion(this.#rewrites.get(sectionIndex) ?? emptyRewrite)
+      // Passage/snapshot reads must match what the person chose to display.
+      // Index extraction keeps its existing latest-rewrite behavior; remaster
+      // reindexing is a separate product decision, not part of this repair.
+      const version = sourcePolicy === 'displayed' && !this.#showRewritten
+        ? undefined
+        : currentVersion(this.#rewrites.get(sectionIndex) ?? emptyRewrite)
       if (version) applyVersion(document, version)
       return document
     } catch (error) {
@@ -1449,7 +1477,7 @@ export class FoliateReaderAdapter implements ReaderAdapter {
       visibility: 'hidden',
       pointerEvents: 'none',
     })
-    const cleanups = [...this.#listen(view), configureForViewport(view, () => this.#style.pageLayout ?? 'auto')]
+    const cleanups = [...this.#listen(view)]
     const replacement: ActiveReader = {
       book,
       view,
@@ -1465,6 +1493,7 @@ export class FoliateReaderAdapter implements ReaderAdapter {
         this.#options.clock ?? systemClock,
       )
       if (revision !== this.#revision || this.#active !== stalled) throw new ReaderClosedError()
+      cleanups.push(configureForViewport(view, () => this.#style.pageLayout ?? 'auto'))
       cleanups.push(this.#listenForRendererRelocations(view))
       view.renderer.setStyles?.(makeReaderCss(this.#style))
       await withDeadline(
@@ -1620,7 +1649,15 @@ function applyPageLayout(
 ): void {
   const isCompact = globalThis.matchMedia?.(COMPACT_QUERY).matches ?? false
   const columns = layout === 'single' || isCompact ? '1' : '2'
-  view.setAttribute('max-column-count', columns)
+  for (const target of readerConfigurationTargets(view)) {
+    target.setAttribute('max-column-count', columns)
+  }
+}
+
+function readerConfigurationTargets(view: FoliateView): HTMLElement[] {
+  const element = view as unknown as HTMLElement
+  const renderer = (view as FoliateView & { renderer?: unknown }).renderer
+  return renderer instanceof HTMLElement ? [element, renderer] : [element]
 }
 
 function configureForViewport(
@@ -1632,12 +1669,23 @@ function configureForViewport(
 
   const apply = () => {
     const isCompact = compact?.matches ?? false
-    const element = view as unknown as HTMLElement
-    element.setAttribute('margin', isCompact ? '20px' : '48px')
-    element.setAttribute('gap', isCompact ? '5%' : '7%')
+    for (const target of readerConfigurationTargets(view)) {
+      const margin = isCompact ? '20px' : '48px'
+      target.setAttribute('margin', margin)
+      for (const side of ['top', 'right', 'bottom', 'left']) {
+        target.setAttribute(`margin-${side}`, margin)
+      }
+      target.setAttribute('gap', isCompact ? '5%' : '7%')
+      // Bookhand owns one active section and one stable content frame. The
+      // candidate defaults to adjacent-section preloading; opt out at the
+      // adapter boundary so renderer internals do not make getContents()
+      // multi-valued during navigation.
+      target.setAttribute('no-preload', '')
+      target.setAttribute('no-continuous-scroll', '')
+      if (reduced?.matches) target.removeAttribute('animated')
+      else target.setAttribute('animated', '')
+    }
     applyPageLayout(view, pageLayout())
-    if (reduced?.matches) element.removeAttribute('animated')
-    else element.setAttribute('animated', '')
   }
 
   apply()
@@ -1646,6 +1694,77 @@ function configureForViewport(
   return () => {
     compact?.removeEventListener('change', apply)
     reduced?.removeEventListener('change', apply)
+  }
+}
+
+function crossesSectionBoundary(
+  view: FoliateView,
+  direction: 'previous' | 'next',
+): boolean {
+  const renderer = view.renderer
+  if (
+    !renderer.hasAttribute('animated')
+    || renderer.hasAttribute('eink')
+    || typeof renderer.animate !== 'function'
+    || document.hidden
+    || typeof renderer.page !== 'number'
+    || typeof renderer.pages !== 'number'
+  ) return false
+  if (direction === 'previous') return renderer.page! <= 0 && !renderer.atStart
+  return renderer.page! >= renderer.pages! - 1 && !renderer.atEnd
+}
+
+async function animateSectionBoundaryTurn(
+  view: FoliateView,
+  direction: 'previous' | 'next',
+  turn: () => Promise<void>,
+): Promise<void> {
+  const renderer = view.renderer
+  const documentDirection = renderer.getContents()[0]?.doc.documentElement.dir
+  const forward = direction === 'next'
+  const exitSign = (documentDirection === 'rtl' ? 1 : -1) * (forward ? 1 : -1)
+  const width = Math.max(1, renderer.getBoundingClientRect().width)
+  let exit: Animation | undefined
+  try {
+    exit = renderer.animate(
+      [
+        { transform: 'translateX(0)' },
+        { transform: `translateX(${exitSign * width}px)` },
+      ],
+      { duration: 150, easing: 'cubic-bezier(0.55, 0, 1, 0.45)', fill: 'forwards' },
+    )
+    await exit.finished
+  } catch {
+    exit?.cancel()
+    await turn()
+    return
+  }
+  const loadController = new AbortController()
+  const loaded = new Promise<void>((resolve) => {
+    view.addEventListener('load', () => resolve(), { once: true, signal: loadController.signal })
+  })
+  let incoming: Animation | undefined
+  try {
+    const navigation = turn()
+    await Promise.race([loaded, navigation])
+    try {
+      incoming = renderer.animate(
+        [
+          { transform: `translateX(${-exitSign * width}px)` },
+          { transform: 'translateX(0)' },
+        ],
+        { duration: 150, easing: 'cubic-bezier(0, 0.55, 0.45, 1)', fill: 'both' },
+      )
+    } catch {
+      await navigation
+      return
+    }
+    exit.cancel()
+    await Promise.all([navigation, incoming.finished.catch(() => undefined)])
+  } finally {
+    loadController.abort()
+    incoming?.cancel()
+    exit.cancel()
   }
 }
 

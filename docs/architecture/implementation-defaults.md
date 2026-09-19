@@ -16,8 +16,8 @@ renders agent artifacts as native study blocks or explicit sandboxed labs.
 
 Use direct dependencies rather than frameworks around frameworks:
 
-- `foliate-js` from the upstream MIT project for EPUB parsing, rendering, CFI,
-  and navigation;
+- the exact pinned MIT `jomi-se/foliate-js` owner fork for EPUB parsing,
+  rendering, CFI, and navigation, behind `ReaderAdapter` and ADR 0005;
 - `@sqlite.org/sqlite-wasm` for the sole local database and FTS5 lexical index;
 - `@huggingface/transformers` for local embeddings;
 - `zod` only if it materially simplifies runtime validation shared by UI and

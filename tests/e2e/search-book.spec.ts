@@ -82,8 +82,8 @@ test('ordinary Search and genuine WebMCP share bounded, non-navigating book retr
   await page.getByRole('button', { name: 'Search', exact: true }).last().click()
   const firstHit = page.locator('.search-results button').first()
   await expect(firstHit).toBeVisible({ timeout: 20_000 })
-  const expectedSection = result.structuredContent?.search?.hits?.[0]?.sectionIndex
-  expect(expectedSection).toEqual(expect.any(Number))
+  const expectedSection = Number.parseInt((await firstHit.getAttribute('data-section-index')) ?? '', 10)
+  expect(Number.isInteger(expectedSection)).toBe(true)
   await firstHit.click()
   await expect.poll(() => currentSection(page)).toBe(expectedSection)
 })

@@ -219,6 +219,54 @@ await writeFixture('missing-cover.epub', [
   ],
 ])
 
+await writeFixture('re001-direction-book.epub', [
+  ['META-INF/container.xml', container],
+  [
+    'OEBPS/package.opf',
+    packageDocument({
+      title: 'RE-001 Direction Lifecycle Fixture',
+      author: 'Bookhand Compatibility Fixtures',
+      manifest: `
+        <item id="horizontal-1" href="horizontal-1.xhtml" media-type="application/xhtml+xml"/>
+        <item id="vertical" href="vertical.xhtml" media-type="application/xhtml+xml"/>
+        <item id="horizontal-2" href="horizontal-2.xhtml" media-type="application/xhtml+xml"/>
+        <item id="style" href="direction.css" media-type="text/css"/>`,
+      spine: '<itemref idref="horizontal-1"/><itemref idref="vertical"/><itemref idref="horizontal-2"/>',
+    }),
+  ],
+  [
+    'OEBPS/nav.xhtml',
+    nav('<li><a href="horizontal-1.xhtml">Horizontal one</a></li><li><a href="vertical.xhtml">Vertical</a></li><li><a href="horizontal-2.xhtml">Horizontal two</a></li>'),
+  ],
+  [
+    'OEBPS/direction.css',
+    `body { font-family: serif; line-height: 1.5; }
+     body.vertical { writing-mode: vertical-rl; }
+     .empty-fragment { display: none; }
+     p { margin: 0 0 1em; }`,
+  ],
+  [
+    'OEBPS/horizontal-1.xhtml',
+    `<?xml version="1.0" encoding="UTF-8"?>
+    <html xmlns="http://www.w3.org/1999/xhtml"><head><title>Horizontal one</title><link rel="stylesheet" href="direction.css"/></head>
+    <body><h1>Horizontal one</h1><p id="h-one">First horizontal section for the persistent-frame direction transition.</p>
+    <p><a href="horizontal-2.xhtml#empty-fragment">Open the empty fragment target</a></p></body></html>`,
+  ],
+  [
+    'OEBPS/vertical.xhtml',
+    `<?xml version="1.0" encoding="UTF-8"?>
+    <html xmlns="http://www.w3.org/1999/xhtml"><head><title>Vertical</title><link rel="stylesheet" href="direction.css"/></head>
+    <body class="vertical"><h1>Vertical</h1><p id="v-one">Vertical writing section for the persistent-frame direction transition.</p></body></html>`,
+  ],
+  [
+    'OEBPS/horizontal-2.xhtml',
+    `<?xml version="1.0" encoding="UTF-8"?>
+    <html xmlns="http://www.w3.org/1999/xhtml"><head><title>Horizontal two</title><link rel="stylesheet" href="direction.css"/></head>
+    <body><h1>Horizontal two</h1><p>${'Leading pagination text. '.repeat(900)}</p>
+    <span class="empty-fragment" id="empty-fragment"></span><p id="after-empty-fragment">Empty fragment destination passage.</p></body></html>`,
+  ],
+])
+
 await writeFile(
   resolve(fixtureDirectory, 'corrupt-book.epub'),
   new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x42, 0x4f, 0x4f, 0x4b, 0x48, 0x41, 0x4e, 0x44]),
@@ -228,4 +276,3 @@ await writeFile(
   'This is deliberately not an EPUB container.\n',
   'utf8',
 )
-
