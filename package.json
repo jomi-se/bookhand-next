@@ -36,7 +36,7 @@
     "ai": "7.0.93",
     "construct-style-sheets-polyfill": "^3.1.0",
     "foliate-js": "https://github.com/jomi-se/foliate-js/archive/ca3f118269f8d78811ef17a1b147363c321273d7.tar.gz",
-    "lucide-react": "^1.39.0",
+    "lucide-react": "^1.46.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zod": "4.4.3"
